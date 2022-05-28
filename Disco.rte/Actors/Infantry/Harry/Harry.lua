@@ -1,7 +1,10 @@
 function Create(self)
 
+	self.fingerPistol9mmSound = CreateSoundContainer("Harry Finger Pistol 9mm", "Disco.rte")
+
 	self.voiceSounds = {
 	Death = CreateSoundContainer("Harry VO Death", "Disco.rte"),
+	GibDeath = CreateSoundContainer("Harry VO GibDeath", "Disco.rte"),
 	PainLight = CreateSoundContainer("Harry VO PainLight", "Disco.rte"),
 	PainMedium = CreateSoundContainer("Harry VO PainMedium", "Disco.rte"),
 	PainStrong = CreateSoundContainer("Harry VO PainStrong", "Disco.rte"),
@@ -55,19 +58,31 @@ function Update(self)
 	
 	if self.Health < 1 and self.deathSequenceStarted ~= true then
 		self.deathSequenceStarted = true
-		self.voiceSound:Stop(-1);
-		self.voiceSound = self.voiceSounds.Death
-		self.voiceSound:Play(self.Pos);
+		if player then
+			TimerMan.TimeScale = 0.2
+			self.voiceSound:Stop(-1);
+			if not self.Head then
+				self.voiceSound = self.voiceSounds.GibDeath
+				self.voiceSound:Play(self.Pos);
+			else
+				self.voiceSound = self.voiceSounds.Death
+				self.voiceSound:Play(self.Pos);
+			end
+
+		end
 	end
 	
 	if self.deathSequenceStarted then
-		self.HUDVisible = 0
+		self.HUDVisible = false;
 		self.Health = 1;
 		self.Status = 1;
+		if not player then
+			self.voiceSound:Stop(-1);
+		end
 		if not self.voiceSound:IsBeingPlayed() then
-			self.deathSequenceStarted = 0;
-			self.Health = 0;
-			self.voiceSounds = nil;
+			TimerMan.TimeScale = 1
+			self.Health = -100;
+			self.Status = 4;
 		end
 	end
 	
@@ -79,7 +94,7 @@ function Update(self)
 		if self.Health < self.oldHealth then
 			self.regenInitialTimer:Reset();
 			self.Healing = false;
-			if player and math.random(0, 100) < 40 then
+			if player and math.random(0, 100) < 40 and self.Health > 0 then
 				if not self.voiceSound:IsBeingPlayed() then
 					if self.oldHealth - self.Health > 40 then
 						self.voiceSound = self.voiceSounds.PainStrong
@@ -162,13 +177,19 @@ function Update(self)
 		end
 		
 		if (UInputMan:KeyHeld(14) and player) or (UInputMan:KeyHeld(8) and not player) then -- N or H
+			if not self.fingerPistol9mmSoundPlayed then
+				self.fingerPistol9mmSoundPlayed = true;
+				self.fingerPistol9mmSound:Play(self.Pos);
+			end
 			self.Head.Frame = 8
 			self.Head.RotAngle = self.Head.RotAngle + 0.02 * math.sin(self.nodFactor)
 			self.Head.Pos = self.Head.Pos + Vector(0, -math.sin(self.nodFactor) * 1.0)
 			self.nodFactor = self.nodFactor + TimerMan.DeltaTimeSecs * 10
 			
 			ToArm(self.FGArm).IdleOffset = Vector(7, 3);
-			ToArm(self.BGArm).IdleOffset = Vector(8, 10);
+			ToArm(self.BGArm).IdleOffset = Vector(8, 6);
+		else
+			self.fingerPistol9mmSoundPlayed = false;
 		end
 		if (UInputMan:KeyHeld(13) and player) or (UInputMan:KeyHeld(10) and not player) then -- M or J
 			self.Head.Frame = 9
@@ -199,15 +220,15 @@ function Update(self)
 		self.Healing = false;
 	end
 	
-	if self.toHeal == true and self.regenInitialTimer:IsPastSimMS(self.regenInitialDelay) and not self.Healing then
+	if not self.deathSequenceStarted and self.toHeal == true and self.regenInitialTimer:IsPastSimMS(self.regenInitialDelay) and not self.Healing then
 		self.Healing = true;
-		if not self.voiceSound:IsBeingPlayed() and self.Health < 30 then	
+		if not self.voiceSound:IsBeingPlayed() and self.Health < 30 and player then	
 			self.voiceSound = self.voiceSounds.Recover
 			self.voiceSound:Play(self.Pos);
 		end
 	end
 	
-	if self.Healing then
+	if self.Healing and not self.deathSequenceStarted then
 		if self.regenTimer:IsPastSimMS(self.regenDelay) then
 			self.regenTimer:Reset();
 			if self.Health > 0 then
@@ -259,4 +280,9 @@ function Update(self)
 		self.spotTarget = nil
 	end
 	
+end
+
+function OnDestroy(self)
+	self.voiceSound:Stop(-1)
+	TimerMan.TimeScale = 1
 end
