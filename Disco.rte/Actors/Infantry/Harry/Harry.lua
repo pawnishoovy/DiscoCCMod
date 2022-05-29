@@ -1,7 +1,120 @@
+DiscoHarry = {}
+
+function DiscoHarry.slowmoEnter(self)
+	if self.slowmoOn then
+		return
+	end
+	self.slowmoEnterSound:Play(self.Pos)
+	self.slowmoOn = true
+	
+	local slowdown = 7
+	TimerMan.TimeScale = 1 / slowdown
+	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
+end
+
+function DiscoHarry.slowmoExit(self)
+	if not self.slowmoOn then
+		return
+	end
+	self.slowmoExitSound:Play(self.Pos)
+	self.slowmoOn = false
+	
+	TimerMan.TimeScale = 1
+	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed
+	
+	--
+end
+
+function DiscoHarry.diceRollQueue(self, threshold)
+	if self.skillCheckQueued then
+		return false
+	end
+	
+	self:SetNumberValue("DiceRollQueued", 1)
+	
+	self.skillCheckStartSound:Play(self.Pos)
+	
+	self.skillCheckThreshold = threshold
+	self.skillCheckQueued = true
+	return true
+end
+
+function DiscoHarry.diceRollQueued(self)
+	local result = false
+	self.skillCheckQueued = false
+	
+	self:RemoveNumberValue("DiceRollQueued")
+	
+	self.skillCheckDiceA = math.random(1, 6)
+	self.skillCheckDiceB = math.random(1, 6)
+	
+	if self.skillCheckDiceA == 1 and self.skillCheckDiceB == 1 then
+		result = false
+	elseif self.skillCheckDiceA == 6 and self.skillCheckDiceB == 6 then
+		result = true
+	elseif self.skillCheckDiceA + self.skillCheckDiceB > self.skillCheckThreshold then
+		result = true
+	else
+		result = false
+	end
+	
+	if result then
+		self.skillCheckSuccessSound:Play(self.Pos)
+		self:SetNumberValue("DiceRollResult", 2)
+	else
+		self.skillCheckFailureSound:Play(self.Pos)
+		self:SetNumberValue("DiceRollResult", 1)
+	end
+	-- Set to 0 after used!
+	
+	self.skillCheckDisplayDuration = 2
+	self.skillCheckDisplaySuccess = result
+	
+	return result
+end
+
+function DiscoHarry.diceRoll(self, threshold)
+	local result = false
+	
+	local valueA = math.random(1, 6)
+	local valueB = math.random(1, 6)
+	
+	if valueA == 1 and valueB == 1 then
+		result = false
+	elseif valueA == 6 and valueB == 6 then
+		result = true
+	elseif valueA + valueB > self.skillCheckThreshold then
+		result = true
+	else
+		result = false
+	end
+	
+	if result then
+		self.skillCheckSuccessSound:Play(self.Pos)
+	else
+		self.skillCheckFailureSound:Play(self.Pos)
+	end
+	return result
+end
+
 function Create(self)
+	self.skillCheckThreshold = threshold
+	self.skillCheckQueued = false
+	self.skillCheckDiceA = 0
+	self.skillCheckDiceB = 0
+	
+	self.skillCheckDisplayDuration = 0
+	self.skillCheckDisplaySuccess = false
+	
+	self.skillCheckStartSound = CreateSoundContainer("Harry Skill Start", "Disco.rte")
+	self.skillCheckSuccessSound = CreateSoundContainer("Harry Skill Success", "Disco.rte")
+	self.skillCheckFailureSound = CreateSoundContainer("Harry Skill Failure", "Disco.rte")
 
+	self.slowmoEnterSound = CreateSoundContainer("Harry Slowmo Enter", "Disco.rte")
+	self.slowmoExitSound = CreateSoundContainer("Harry Slowmo Exit", "Disco.rte")
+	
 	self.fingerPistol9mmSound = CreateSoundContainer("Harry Finger Pistol 9mm", "Disco.rte")
-
+	
 	self.voiceSounds = {
 	Death = CreateSoundContainer("Harry VO Death", "Disco.rte"),
 	GibDeath = CreateSoundContainer("Harry VO GibDeath", "Disco.rte"),
@@ -41,9 +154,16 @@ function Create(self)
 	self.originalArmOffsetBG = ToArm(self.BGArm).IdleOffset
 	
 	self.nodFactor = 0
+	
+	self.slowmoSimSpeed = 1 / 60
+	self.slowmoOn = false
+	self.slowmoDuration = 0
+	
+	self.spriteSkillSuccess = CreateMOSRotating("Harry Skill Success", "Disco.rte")
+	self.spriteSkillFailure = CreateMOSRotating("Harry Skill Failure", "Disco.rte")
+	self.spriteDice = CreateMOSRotating("Harry Dice", "Disco.rte")
 end
-function Update(self)
-
+function Update(self)	
 	if UInputMan:KeyPressed(46) then
 		self:ReloadScripts();
 	end
@@ -134,6 +254,45 @@ function Update(self)
 		ToArm(self.BGArm).IdleOffset = self.originalArmOffsetBG
 		
 		local player = self:IsPlayerControlled()
+		
+		-- DICE ROLL
+		if self:NumberValueExists("DiceRollThreshold") then
+			DiscoHarry.diceRollQueue(self, self:GetNumberValue("DiceRollThreshold"))
+			self:RemoveNumberValue("DiceRollThreshold")
+		end
+		
+		if self.skillCheckQueued and not self.skillCheckStartSound:IsBeingPlayed() then
+			DiscoHarry.diceRollQueued(self)
+		end
+		
+		local origin = self.Pos + Vector(0, 50)
+		if self.skillCheckStartSound:IsBeingPlayed() then
+			for i = 1, 15 do
+				local offsetA = Vector(40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
+				local offsetB = Vector(-40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
+				
+				PrimitiveMan:DrawLinePrimitive(origin + offsetB, origin + offsetA, 222)
+			end
+		elseif self.skillCheckDisplayDuration > 0 and player then
+			local randStr = math.pow(self.skillCheckDisplayDuration / 1.5, 3)
+			local rand1 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+			local rand2 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+			local rand3 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+			
+			if self.skillCheckDisplaySuccess then
+				PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillSuccess, 0, 0)
+			else
+				PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillFailure, 0, 0)
+			end
+			
+			local originDice = origin + Vector(0, -20)
+			local offset = Vector(-10, 0)
+			PrimitiveMan:DrawBitmapPrimitive(originDice + offset + rand2, self.spriteDice, 0, self.skillCheckDiceA - 1)
+			PrimitiveMan:DrawBitmapPrimitive(originDice - offset + rand3, self.spriteDice, 0, self.skillCheckDiceB - 1)
+		end
+		self.skillCheckDisplayDuration = math.max(self.skillCheckDisplayDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+		
+		-- EMOTIONS
 		if (UInputMan:KeyHeld(6) and player) or (UInputMan:KeyHeld(7) and not player) then -- F or G
 			
 			if self.talkTimer:IsPastSimMS(self.talkResetTime) then
@@ -251,6 +410,20 @@ function Update(self)
 			self.lastWoundCount = self.WoundCount;
 			self.lastHealth = self.Health;
 		end
+	end
+	
+	-- SLOWMO!
+	if self:NumberValueExists("SlowmoDuration") then
+		local duration = self:GetNumberValue("SlowmoDuration")
+		self.slowmoDuration = math.max(self.slowmoDuration, duration)
+		self:SetNumberValue("SlowmoDuration", 0)
+	end
+	
+	if self.slowmoDuration > 0 then
+		DiscoHarry.slowmoEnter(self)
+		self.slowmoDuration = math.max(self.slowmoDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+	else
+		DiscoHarry.slowmoExit(self)
 	end
 	
 	-- SPOTTING TARGET LOGIC!!
