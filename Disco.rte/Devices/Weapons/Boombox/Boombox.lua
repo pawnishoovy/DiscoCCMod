@@ -17,6 +17,10 @@ end
 
 function Update(self)
 
+	if self:GetRootParent().UniqueID ~= self.UniqueID then
+		self.parent = ToAHuman(self:GetRootParent())
+	end
+	
 	self.onFirstSound.Pos = self.Pos;
 	self.onSound.Pos = self.Pos;
 	self.wantToBeFree.Pos = self.Pos;
@@ -26,11 +30,20 @@ function Update(self)
 	self.Secret.Pos = self.Pos;
 	self.secretEcho.Pos = self.Pos;
 	
+	self.wantToBeFree.Volume = TimerMan.TimeScale;
+	self.Rave.Volume = TimerMan.TimeScale;
+	self.Secret.Volume = TimerMan.TimeScale;
+	
+	self.wantToBeFreeEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
+	self.raveEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
+	print(self.raveEcho.Volume)
+	self.secretEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
+	
 	if self.turnedOn and not (self.wantToBeFreeEcho:IsBeingPlayed() or self.raveEcho:IsBeingPlayed() or self.secretEcho:IsBeingPlayed()) then
 		self:Activate();
 	end
 
-	if self.FiredFrame then
+	if self.FiredFrame and (self.parent and ((self.parent.EquippedItem and self.parent.EquippedItem.UniqueID == self.UniqueID) or (self.parent.EquippedBGItem.UniqueID == self.UniqueID and not self.parent.EquippedItem))) then
 		if not self.turnedOn then
 			self.turnedOn = true
 			self.onFirstSound:Play(self.Pos);

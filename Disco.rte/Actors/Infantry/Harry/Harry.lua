@@ -389,7 +389,7 @@ function Update(self)
 		
 		if (UInputMan:KeyHeld(14) and player) or (UInputMan:KeyHeld(8) and not player)
 		or (self.EquippedItem and ToHeldDevice(self.EquippedItem):GetNumberValue("Song") == 2) or (self.EquippedBGItem and ToHeldDevice(self.EquippedBGItem):GetNumberValue("Song") == 2) then -- N or H
-			if not self.fingerPistol9mmSoundPlayed then
+			if not self.fingerPistol9mmSoundPlayed and not self.EquippedItem then
 				self.fingerPistol9mmSoundPlayed = true;
 				self.fingerPistol9mmSound:Play(self.Pos);
 			end
