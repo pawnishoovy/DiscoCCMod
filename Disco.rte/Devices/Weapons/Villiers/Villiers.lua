@@ -17,6 +17,8 @@ function Create(self)
 	self.parentSet = false;
 	
 	self.recoil = 0
+	self.accuracy = 1
+	self.accuracySway = 0
 	
 	self.targeting = false
 	self.targetingActor = nil
@@ -110,7 +112,9 @@ function Update(self)
 				if self.targetingActor and self.targetingActor ~= bestActor.UniqueID then
 					self.targetingAnimationProgress = 0
 				end
-				self.parent:SetNumberValue("SlowmoDuration", 0.3)
+				if self.recoil <= 0 then
+					self.parent:SetNumberValue("SlowmoDuration", 0.3)
+				end
 				self.targetingActor = bestActor.UniqueID
 				self.targetingAnimationProgress = math.min(self.targetingAnimationProgress + TimerMan.DeltaTimeSecs / TimerMan.TimeScale * 2, 1)
 			else
@@ -135,6 +139,24 @@ function Update(self)
 			if actor and IsActor(actor) then
 				actor = ToActor(actor)
 				
+				-- Skill check
+				if self.targeting then
+					local thershold = 6
+					
+					local difference = SceneMan:ShortestDistance(self.Pos, actor.Pos, SceneMan.SceneWrapsX)
+					local distance = difference.Magnitude
+					
+					local factor = distance / 100
+					thershold = math.floor(factor + (1 - self.accuracy) * 10 * math.abs(math.sin(self.accuracySway)))
+					
+					self.parent:SetNumberValue("SkillChanceThreshold", thershold)
+					if self:IsActivated() then
+						self.parent:SetNumberValue("DiceRollThreshold", thershold)
+						self.targetingAwaitingSkillCheck = true
+					end
+				end
+				
+				-- HUD
 				local center = Vector(actor.Pos.X, actor.Pos.Y)
 				
 				local highest = 0
@@ -177,6 +199,7 @@ function Update(self)
 				
 				local factor = self.targetingAnimationProgress *self.targetingAnimationProgress
 				local color = 223
+				local colorBG = 173--200
 				local origin = actor.Pos
 				
 				local hudUpperPos = origin + Vector(0, highest - 5)
@@ -189,21 +212,29 @@ function Update(self)
 				
 				-- Display foe name
 				local name = actor.PresetName
-				PrimitiveMan:DrawBoxFillPrimitive(hudLowerPos + Vector(-30 * factor, -5), hudLowerPos + Vector(30 * factor, 5), 173)
+				PrimitiveMan:DrawBoxFillPrimitive(hudLowerPos + Vector(-30 * factor, -5), hudLowerPos + Vector(30 * factor, 5), colorBG)
 				--PrimitiveMan:DrawTextPrimitive(hudLowerPos + Vector(0, -7), "Foe:", true, 1)
 				PrimitiveMan:DrawTextPrimitive(hudLowerPos + Vector(0, -5), string.sub(name, 0, math.floor(string.len(name) * factor + 0.5)), true, 1)
 				PrimitiveMan:DrawCircleFillPrimitive(hudLowerPos + Vector(-30 * factor, 0) + Vector(-5, 0), 1, color)
 				
 				local hudLowerLine = Vector(25, 0) * self.targetingAnimationProgress
 				PrimitiveMan:DrawLinePrimitive(hudLowerPos - hudLowerLine + Vector(0, -7), hudLowerPos + hudLowerLine + Vector(0, -7), color)
-			end
-		end
-		
-		-- Skill check
-		if self.targeting and self.targetingActor then
-			if self:IsActivated() then
-				self.parent:SetNumberValue("DiceRollThreshold", 6)
-				self.targetingAwaitingSkillCheck = true
+				
+				
+				-- Active skill check
+				if self.targeting then
+					PrimitiveMan:DrawCirclePrimitive(hudLowerPos + Vector(0, -7), math.ceil(2 * (1 - self.accuracy)), color)
+					PrimitiveMan:DrawCircleFillPrimitive(hudLowerPos + hudLowerLine * math.sin(self.accuracySway) * (1 - self.accuracy) + Vector(0, -7), math.ceil(2 * (1 - self.accuracy)), color)
+				end
+				
+				
+				if actor and IsAHuman(actor) then
+					actor = ToAHuman(actor)
+					if math.random() <= self.accuracy then
+						local rand = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * (1 - self.accuracy) * 2
+						PrimitiveMan:DrawCirclePrimitive(actor.Head.Pos + rand, actor.Head.Radius + 7 * (1 - self.accuracy), color)
+					end
+				end
 			end
 		end
 	else
@@ -287,6 +318,8 @@ function Update(self)
 		self.recoil = 1
 		self.rotation = self.rotation + 5
 		
+		self.accuracy = 0
+		
 		-- Kill
 		if self.targetingSuccess then
 			if self.targetingActor then
@@ -350,7 +383,11 @@ function Update(self)
 	
 	-- Animation
 	if self.parent then
-		self.recoil = math.max(self.recoil - 1 * TimerMan.DeltaTimeSecs * 2, 0)
+		self.recoil = math.max(self.recoil - 1 * TimerMan.DeltaTimeSecs, 0)
+		self.accuracy = math.min(self.accuracy + 0.35 * TimerMan.DeltaTimeSecs, 1)
+		if not self.targetingAwaitingSkillCheck and not self.preFireActive then
+			self.accuracySway = self.accuracySway + 1.5 * TimerMan.DeltaTimeSecs / TimerMan.TimeScale
+		end
 		
 		-- Recoil
 		self.rotationTarget = self.rotationTarget + (self.recoil * self.recoil) * 20

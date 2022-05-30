@@ -7,6 +7,8 @@ function DiscoHarry.slowmoEnter(self)
 	self.slowmoEnterSound:Play(self.Pos)
 	self.slowmoOn = true
 	
+	self.slowmoLoop:Play(self.Pos);
+	
 	local slowdown = 7
 	TimerMan.TimeScale = 1 / slowdown
 	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
@@ -18,6 +20,8 @@ function DiscoHarry.slowmoExit(self)
 	end
 	self.slowmoExitSound:Play(self.Pos)
 	self.slowmoOn = false
+	
+	self.slowmoLoop:FadeOut(400);
 	
 	TimerMan.TimeScale = 1
 	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed
@@ -61,9 +65,27 @@ function DiscoHarry.diceRollQueued(self)
 	if result then
 		self.skillCheckSuccessSound:Play(self.Pos)
 		self:SetNumberValue("DiceRollResult", 2)
+		
+		local flareName = "Harry Screen Flare Skill Check Success"
+		if FrameMan.PlayerScreenWidth > 1920 or FrameMan.PlayerScreenHeight > 1080 then
+			flareName = flareName .. " Big"
+		end
+		
+		local flare = CreateMOPixel(flareName, "Disco.rte");
+		flare.Pos = SceneMan:GetOffset(Activity.PLAYER_1) + Vector(FrameMan.PlayerScreenWidth * 0.5, FrameMan.PlayerScreenHeight * 0.5);
+		MovableMan:AddParticle(flare);
 	else
 		self.skillCheckFailureSound:Play(self.Pos)
 		self:SetNumberValue("DiceRollResult", 1)
+		
+		local flareName = "Harry Screen Flare Skill Check Failure"
+		if FrameMan.PlayerScreenWidth > 1920 or FrameMan.PlayerScreenHeight > 1080 then
+			flareName = flareName .. " Big"
+		end
+		
+		local flare = CreateMOPixel(flareName, "Disco.rte");
+		flare.Pos = SceneMan:GetOffset(Activity.PLAYER_1) + Vector(FrameMan.PlayerScreenWidth * 0.5, FrameMan.PlayerScreenHeight * 0.5);
+		MovableMan:AddParticle(flare);
 	end
 	-- Set to 0 after used!
 	
@@ -106,12 +128,16 @@ function Create(self)
 	self.skillCheckDisplayDuration = 0
 	self.skillCheckDisplaySuccess = false
 	
+	self.skillChanceDisplayDuration = 0
+	self.skillChanceDisplayThreshold = 0
+	
 	self.skillCheckStartSound = CreateSoundContainer("Harry Skill Start", "Disco.rte")
 	self.skillCheckSuccessSound = CreateSoundContainer("Harry Skill Success", "Disco.rte")
 	self.skillCheckFailureSound = CreateSoundContainer("Harry Skill Failure", "Disco.rte")
 
 	self.slowmoEnterSound = CreateSoundContainer("Harry Slowmo Enter", "Disco.rte")
 	self.slowmoExitSound = CreateSoundContainer("Harry Slowmo Exit", "Disco.rte")
+	self.slowmoLoop = CreateSoundContainer("Harry Slowmo Loop", "Disco.rte")
 	
 	self.fingerPistol9mmSound = CreateSoundContainer("Harry Finger Pistol 9mm", "Disco.rte")
 	
@@ -166,6 +192,7 @@ function Create(self)
 	self.slowmoOn = false
 	self.slowmoDuration = 0
 	
+	self.spriteSkillChance = CreateMOSRotating("Harry Skill Chance", "Disco.rte")
 	self.spriteSkillSuccess = CreateMOSRotating("Harry Skill Success", "Disco.rte")
 	self.spriteSkillFailure = CreateMOSRotating("Harry Skill Failure", "Disco.rte")
 	self.spriteDice = CreateMOSRotating("Harry Dice", "Disco.rte")
@@ -266,7 +293,7 @@ function Update(self)
 	
 	if self.Head then
 		self.Head.Frame = math.floor((7 - math.min(self.blinkTimer.ElapsedSimTimeMS / 300, 1) * 3) + 0.55)
-		if self.controller:IsState(Controller.WEAPON_FIRE) then-- or (self.Health > 99 or (self.Health > 47.313 and self.Health < 48.211)) then
+		if self.controller:IsState(Controller.WEAPON_FIRE) or self.skillCheckQueued then-- or (self.Health > 99 or (self.Health > 47.313 and self.Health < 48.211)) then
 			self.Head.Frame = self.Head.Frame - 4
 		end
 		
@@ -316,33 +343,91 @@ function Update(self)
 			self:RemoveNumberValue("DiceRollResult");
 		end
 				
-		
-		local origin = self.Pos + Vector(0, 50)
-		if self.skillCheckStartSound:IsBeingPlayed() then
-			for i = 1, 15 do
-				local offsetA = Vector(40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
-				local offsetB = Vector(-40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
-				
-				PrimitiveMan:DrawLinePrimitive(origin + offsetB, origin + offsetA, 222)
-			end
-		elseif self.skillCheckDisplayDuration > 0 and player then
-			local randStr = math.pow(self.skillCheckDisplayDuration / 1.5, 3)
-			local rand1 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
-			local rand2 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
-			local rand3 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
-			
-			if self.skillCheckDisplaySuccess then
-				PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillSuccess, 0, 0)
-			else
-				PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillFailure, 0, 0)
-			end
-			
-			local originDice = origin + Vector(0, -20)
-			local offset = Vector(-10, 0)
-			PrimitiveMan:DrawBitmapPrimitive(originDice + offset + rand2, self.spriteDice, 0, self.skillCheckDiceA - 1)
-			PrimitiveMan:DrawBitmapPrimitive(originDice - offset + rand3, self.spriteDice, 0, self.skillCheckDiceB - 1)
+		--
+		if self:NumberValueExists("SkillChanceThreshold") then
+			self.skillChanceDisplayThreshold = self:GetNumberValue("SkillChanceThreshold")
+			self:RemoveNumberValue("SkillChanceThreshold")
+			self.skillChanceDisplayDuration = math.max(self.skillChanceDisplayDuration, 0.1)
 		end
+		if self:NumberValueExists("SkillChanceDuration") then
+			local duration = self:GetNumberValue("SkillChanceDuration")
+			self.skillChanceDisplayDuration = math.max(self.skillChanceDisplayDuration, duration)
+			self:SetNumberValue("SkillChanceDuration", 0)
+		end
+		
+		-- HUD
+		if player then
+			local origin = self.Pos + Vector(0, 50)
+			
+			-- Display skill check result
+			if self.skillCheckStartSound:IsBeingPlayed() then
+				for i = 1, 15 do
+					local offsetA = Vector(40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
+					local offsetB = Vector(-40, 0):RadRotate(RangeRand(-1, 1) * math.rad(15)) * RangeRand(0.6, 1.1)
+					
+					PrimitiveMan:DrawLinePrimitive(origin + offsetB, origin + offsetA, 222)
+				end
+			elseif self.skillCheckDisplayDuration > 0 then
+				local randStr = math.pow(self.skillCheckDisplayDuration / 1.5, 3)
+				local rand1 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+				local rand2 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+				local rand3 = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * randStr
+				
+				if self.skillCheckDisplaySuccess then
+					PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillSuccess, 0, 0)
+				else
+					PrimitiveMan:DrawBitmapPrimitive(origin + rand1, self.spriteSkillFailure, 0, 0)
+				end
+				
+				local originDice = origin + Vector(0, -20)
+				local offset = Vector(-10, 0)
+				PrimitiveMan:DrawBitmapPrimitive(originDice + offset + rand2, self.spriteDice, 0, self.skillCheckDiceA - 1)
+				PrimitiveMan:DrawBitmapPrimitive(originDice - offset + rand3, self.spriteDice, 0, self.skillCheckDiceB - 1)
+			else
+				-- Display skill check chance
+				if self.skillChanceDisplayDuration > 0 then
+					local percent = math.floor(((1 - math.min(self.skillChanceDisplayThreshold, 12) / 12) * 0.94 + 0.03) * 100)
+					local frame = 0
+					
+					local width = 1
+					
+					if percent < 4 then
+						frame = 0
+						width = width * 1.4
+					elseif percent <= 20 then
+						frame = 1
+						width = width * 1.4
+					elseif percent < 40 then
+						frame = 2
+					elseif percent <= 60 then
+						frame = 3
+					elseif percent <= 80 then
+						frame = 4
+					else
+						frame = 5
+						width = width * 1.4
+					end
+					
+					--PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(-35 * width, -37), origin + Vector(35 * width, 10), 200)
+					
+					--PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(-35 * width, -33), origin + Vector(35 * width, -25), 87)
+					
+					--PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(-35 * width, -37), origin + Vector(-35 * width + 6, 10), 254)
+					--PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(35 * width, -37), origin + Vector(35 * width - 6, 10), 254)
+					
+					PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(-35 * width, -15), origin + Vector(35 * width, 10), 200)
+					
+					PrimitiveMan:DrawBitmapPrimitive(origin + Vector(0, -5), self.spriteSkillChance, 0, frame)
+					PrimitiveMan:DrawTextPrimitive(origin + Vector(0, 1), tostring(percent) .. "%", true, 1)
+					
+					PrimitiveMan:DrawBoxFillPrimitive(origin + Vector(-45, -23), origin + Vector(45, -15), 87)
+					PrimitiveMan:DrawTextPrimitive(origin + Vector(0, -24), "HAND/EYE COORDINATION", true, 1)
+				end
+			end
+		end
+		
 		self.skillCheckDisplayDuration = math.max(self.skillCheckDisplayDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+		self.skillChanceDisplayDuration = math.max(self.skillChanceDisplayDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
 		
 		-- EMOTIONS
 		if (UInputMan:KeyHeld(6) and player) or (UInputMan:KeyHeld(7) and not player) then -- F or G
@@ -513,4 +598,7 @@ function OnDestroy(self)
 	self.voiceSound:Stop(-1)
 	TimerMan.TimeScale = 1
 	DiscoHarry.slowmoExit(self)
+	
+	self.slowmoLoop:FadeOut(400);
+	self.finalDeathLoop:FadeOut(400);
 end
