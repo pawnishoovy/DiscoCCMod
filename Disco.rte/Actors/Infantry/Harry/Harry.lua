@@ -115,6 +115,11 @@ function Create(self)
 	
 	self.fingerPistol9mmSound = CreateSoundContainer("Harry Finger Pistol 9mm", "Disco.rte")
 	
+	self.healthDamageSound = CreateSoundContainer("Harry Health Damage", "Disco.rte")
+	self.healthCriticalSound = CreateSoundContainer("Harry Health Critical", "Disco.rte")
+	self.healthRecoverSound = CreateSoundContainer("Harry Health Recover", "Disco.rte")
+	self.finalDeathLoop = CreateSoundContainer("Harry Final Death Loop", "Disco.rte")
+	
 	self.voiceSounds = {
 	Death = CreateSoundContainer("Harry VO Death", "Disco.rte"),
 	GibDeath = CreateSoundContainer("Harry VO GibDeath", "Disco.rte"),
@@ -133,11 +138,13 @@ function Create(self)
 	self.spotLoseDelay = 7000;
 	self.spotLoseTimer = Timer();
 
+	self.timesDied = 0
 	self.oldHealth = 100
 	self.healAmount = 2;
 	self.regenInitialDelay = 7000
 	self.regenInitialTimer = Timer();
 	self.regenDelay = 300;
+	self.regenTimer = Timer();
 	self.regenTimer = Timer();
 	
 	self.blinkTimer = Timer()
@@ -176,14 +183,20 @@ function Update(self)
 	
 	-- DEATH LOGIC
 	
-	if self.Health < 1 and self.deathSequenceStarted ~= true then
+	if (not self.finalDeath) and self.Health < 1 and self.deathSequenceStarted ~= true then
+		self.healthDamageSound:Play(self.Pos);
+		self.healthCriticalSound:Play(self.Pos);
+		DiscoHarry.slowmoEnter(self)
+		self.slowmoDuration = 15000;
 		self.deathSequenceStarted = true
+		self.timesDied = self.timesDied + 1
 		if player then
-			TimerMan.TimeScale = 0.2
 			self.voiceSound:Stop(-1);
 			if not self.Head then
+				self.finalDeath = true;
 				self.voiceSound = self.voiceSounds.GibDeath
 				self.voiceSound:Play(self.Pos);
+				self.finalDeathLoop:Play(self.Pos);
 			else
 				self.voiceSound = self.voiceSounds.Death
 				self.voiceSound:Play(self.Pos);
@@ -199,10 +212,16 @@ function Update(self)
 		if not player then
 			self.voiceSound:Stop(-1);
 		end
-		if not self.voiceSound:IsBeingPlayed() then
-			TimerMan.TimeScale = 1
-			self.Health = -100;
+		if not self.voiceSound:IsBeingPlayed() and not self.finalDeath then
+			self.deathSaveRoll = true;
+			DiscoHarry.diceRollQueue(self, 4 * math.max(1, self.timesDied))
+		elseif not self.voiceSound:IsBeingPlayed() then
+			self.healthCriticalSound:FadeOut(400);
+			self.finalDeathLoop:FadeOut(400);
+			self.Health = -1;
 			self.Status = 4;
+			DiscoHarry.slowmoExit(self)
+			self.slowmoDuration = 0;
 		end
 	end
 	
@@ -217,9 +236,11 @@ function Update(self)
 			if player and math.random(0, 100) < 40 and self.Health > 0 then
 				if not self.voiceSound:IsBeingPlayed() then
 					if self.oldHealth - self.Health > 40 then
+						self.healthDamageSound:Play(self.Pos);
 						self.voiceSound = self.voiceSounds.PainStrong
 						self.voiceSound:Play(self.Pos);
 					elseif self.oldHealth - self.Health > 15 then
+						self.healthDamageSound:Play(self.Pos);
 						self.voiceSound = self.voiceSounds.PainMedium
 						self.voiceSound:Play(self.Pos);
 					elseif  self.oldHealth - self.Health > 5 then
@@ -249,9 +270,12 @@ function Update(self)
 			self.Head.Frame = self.Head.Frame - 4
 		end
 		
-		
-		ToArm(self.FGArm).IdleOffset = self.originalArmOffsetFG
-		ToArm(self.BGArm).IdleOffset = self.originalArmOffsetBG
+		if self.FGArm then
+			ToArm(self.FGArm).IdleOffset = self.originalArmOffsetFG
+		end
+		if self.BGArm then
+			ToArm(self.BGArm).IdleOffset = self.originalArmOffsetBG
+		end
 		
 		local player = self:IsPlayerControlled()
 		
@@ -264,6 +288,34 @@ function Update(self)
 		if self.skillCheckQueued and not self.skillCheckStartSound:IsBeingPlayed() then
 			DiscoHarry.diceRollQueued(self)
 		end
+		
+		if self.deathSaveRoll and self:NumberValueExists("DiceRollResult") then
+			self.deathSaveRoll = false;
+			DiscoHarry.slowmoExit(self)
+			self.slowmoDuration = 0;
+			self.healthCriticalSound:FadeOut(400);
+			self.finalDeathLoop:FadeOut(400);
+			if self:GetNumberValue("DiceRollResult") == 2 then
+				self.deathSequenceStarted = false;
+				self.HUDVisible = true;
+				self.Health = 35;
+				self:RemoveWounds(4);
+				self.controller.Disabled = false;
+				self.Status = 0;
+				if player then
+					self.healthRecoverSound:Play(self.Pos);
+					self.voiceSound = self.voiceSounds.Recover
+					self.voiceSound:Play(self.Pos);
+				end
+			else
+				self.finalDeath = true;
+				self.deathSequenceStarted = false;
+				self.Health = -100;
+				self.Status = 4;
+			end
+			self:RemoveNumberValue("DiceRollResult");
+		end
+				
 		
 		local origin = self.Pos + Vector(0, 50)
 		if self.skillCheckStartSound:IsBeingPlayed() then
@@ -335,7 +387,8 @@ function Update(self)
 			end
 		end
 		
-		if (UInputMan:KeyHeld(14) and player) or (UInputMan:KeyHeld(8) and not player) then -- N or H
+		if (UInputMan:KeyHeld(14) and player) or (UInputMan:KeyHeld(8) and not player)
+		or (self.EquippedItem and ToHeldDevice(self.EquippedItem):GetNumberValue("Song") == 2) or (self.EquippedBGItem and ToHeldDevice(self.EquippedBGItem):GetNumberValue("Song") == 2) then -- N or H
 			if not self.fingerPistol9mmSoundPlayed then
 				self.fingerPistol9mmSoundPlayed = true;
 				self.fingerPistol9mmSound:Play(self.Pos);
@@ -350,9 +403,10 @@ function Update(self)
 		else
 			self.fingerPistol9mmSoundPlayed = false;
 		end
-		if (UInputMan:KeyHeld(13) and player) or (UInputMan:KeyHeld(10) and not player) then -- M or J
+		if (UInputMan:KeyHeld(13) and player) or (UInputMan:KeyHeld(10) and not player)
+		or (self.EquippedItem and ToHeldDevice(self.EquippedItem):GetNumberValue("Song") == 1) or (self.EquippedBGItem and ToHeldDevice(self.EquippedBGItem):GetNumberValue("Song") == 1) then -- M or J
 			self.Head.Frame = 9
-			self.Head.RotAngle = self.Head.RotAngle - 0.05
+			self.Head.RotAngle = self.Head.RotAngle - (0.05* self.FlipFactor)
 			self.nodFactor = self.nodFactor + TimerMan.DeltaTimeSecs * 10
 			
 			ToArm(self.FGArm).IdleOffset = Vector(6, 12);
@@ -379,7 +433,7 @@ function Update(self)
 		self.Healing = false;
 	end
 	
-	if not self.deathSequenceStarted and self.toHeal == true and self.regenInitialTimer:IsPastSimMS(self.regenInitialDelay) and not self.Healing then
+	if (not self.deathSequenceStarted or self.finalDeath) and self.toHeal == true and self.regenInitialTimer:IsPastSimMS(self.regenInitialDelay) and not self.Healing then
 		self.Healing = true;
 		if not self.voiceSound:IsBeingPlayed() and self.Health < 30 and player then	
 			self.voiceSound = self.voiceSounds.Recover
@@ -387,7 +441,7 @@ function Update(self)
 		end
 	end
 	
-	if self.Healing and not self.deathSequenceStarted then
+	if self.Healing and (not self.deathSequenceStarted or self.finalDeath) then
 		if self.regenTimer:IsPastSimMS(self.regenDelay) then
 			self.regenTimer:Reset();
 			if self.Health > 0 then
@@ -458,4 +512,5 @@ end
 function OnDestroy(self)
 	self.voiceSound:Stop(-1)
 	TimerMan.TimeScale = 1
+	DiscoHarry.slowmoExit(self)
 end

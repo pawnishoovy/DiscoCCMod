@@ -350,7 +350,7 @@ function Update(self)
 	
 	-- Animation
 	if self.parent then
-		self.recoil = math.max(self.recoil - 1 * TimerMan.DeltaTimeSecs, 0)
+		self.recoil = math.max(self.recoil - 1 * TimerMan.DeltaTimeSecs * 2, 0)
 		
 		-- Recoil
 		self.rotationTarget = self.rotationTarget + (self.recoil * self.recoil) * 20
