@@ -113,7 +113,7 @@ function Update(self)
 					self.targetingAnimationProgress = 0
 				end
 				if self.recoil <= 0 then
-					self.parent:SetNumberValue("SlowmoDuration", 0.3)
+					self.parent:SetNumberValue("SlowmoDuration", 0.7)
 				end
 				self.targetingActor = bestActor.UniqueID
 				self.targetingAnimationProgress = math.min(self.targetingAnimationProgress + TimerMan.DeltaTimeSecs / TimerMan.TimeScale * 2, 1)

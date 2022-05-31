@@ -188,6 +188,20 @@ function Create(self)
 	
 	self.nodFactor = 0
 	
+	-- leg Collision Detection system
+	self.foot = 0;
+    self.feetContact = {false, false}
+    self.feetTimers = {Timer(), Timer()}
+	self.footstepTime = 100 -- 2 Timers to avoid noise	
+	
+	-- custom Jumping
+	self.isJumping = false
+	self.jumpStrength = -3;
+	self.jumpTimer = Timer();
+	self.jumpDelay = 500;
+	self.jumpBoostTimer = Timer();
+	self.jumpStop = Timer();
+	
 	self.slowmoSimSpeed = 1 / 60
 	self.slowmoOn = false
 	self.slowmoDuration = 0
@@ -203,6 +217,100 @@ function Update(self)
 	end
 
 	local player = self:IsPlayerControlled();
+	self.controller = self:GetController();
+	
+	-- JUMPING CODE
+	
+	if player then -- AI doesn't update its own foot checking when playercontrolled so we have to do it
+		if self.Vel.Y > 10 then
+			self.wasInAir = true;
+		else
+			self.wasInAir = false;
+		end
+		for i = 1, 2 do
+			--local foot = self.feet[i]
+			local foot = nil
+			--local leg = self.legs[i]
+			if i == 1 then
+				foot = self.FGFoot 
+			else
+				foot = self.BGFoot 
+			end
+
+			--if foot ~= nil and leg ~= nil and leg.ID ~= rte.NoMOID then
+			if foot ~= nil then
+				local footPos = foot.Pos				
+				local mat = nil
+				local pixelPos = footPos + Vector(0, 4)
+				self.footPixel = SceneMan:GetTerrMatter(pixelPos.X, pixelPos.Y)
+				--PrimitiveMan:DrawLinePrimitive(pixelPos, pixelPos, 13)
+				if self.footPixel ~= 0 then
+					mat = SceneMan:GetMaterialFromID(self.footPixel)
+				--	PrimitiveMan:DrawLinePrimitive(pixelPos, pixelPos, 162);
+				--else
+				--	PrimitiveMan:DrawLinePrimitive(pixelPos, pixelPos, 13);
+				end
+				
+				local movement = (self.controller:IsState(Controller.MOVE_LEFT) == true or self.controller:IsState(Controller.MOVE_RIGHT) == true or self.Vel.Magnitude > 3)
+				if mat ~= nil then
+					--PrimitiveMan:DrawTextPrimitive(footPos, mat.PresetName, true, 0);
+					if self.feetContact[i] == false then
+						self.feetContact[i] = true
+						if self.feetTimers[i]:IsPastSimMS(self.footstepTime) and movement then																	
+							self.feetTimers[i]:Reset()
+						end
+					end
+				else
+					if self.feetContact[i] == true then
+						self.feetContact[i] = false
+						if self.feetTimers[i]:IsPastSimMS(self.footstepTime) and movement then
+							self.feetTimers[i]:Reset()
+						end
+					end
+				end
+			end
+		end
+	
+		-- Custom Jump
+		if self.controller:IsState(Controller.BODY_JUMPSTART) == true and self.controller:IsState(Controller.BODY_CROUCH) == false and self.jumpTimer:IsPastSimMS(self.jumpDelay) and not self.isJumping then
+			if (self.feetContact[1] == true or self.feetContact[2] == true) or self.wasInAir == false then
+				local jumpVec = Vector(0, self.noSprint and self.jumpStrength * 0.01 or self.jumpStrength)
+				local jumpWalkX = 3
+				if moving then
+					if self.controller:IsState(Controller.MOVE_LEFT) == true then
+						jumpVec.X = -jumpWalkX
+					elseif self.controller:IsState(Controller.MOVE_RIGHT) == true then
+						jumpVec.X = jumpWalkX
+					end
+				end
+				self.jumpBoostTimer:Reset();
+				
+				if math.abs(self.Vel.X) > jumpWalkX * 2.0 then
+					self.Vel = Vector(self.Vel.X, self.Vel.Y + jumpVec.Y)
+				else
+					self.Vel = Vector(self.Vel.X + jumpVec.X, self.Vel.Y + jumpVec.Y)
+				end
+				self.isJumping = true
+				self.jumpTimer:Reset()
+				self.jumpStop:Reset()
+			end
+		elseif self.isJumping or self.wasInAir then
+			if self.isJumping and self.Status < 1 then
+				if self.controller:IsState(Controller.BODY_JUMP) == true and not self.jumpBoostTimer:IsPastSimMS(200) then
+					self.Vel = self.Vel - SceneMan.GlobalAcc * TimerMan.DeltaTimeSecs * 2.8 -- Stop the gravity
+				end
+				if self.controller:IsState(Controller.MOVE_LEFT) == true and not self.jumpBoostTimer:IsPastSimMS(1000) and self.Vel.X > -5 then
+					self.Vel = self.Vel + Vector(-8, 0) * TimerMan.DeltaTimeSecs * 1.0
+				elseif self.controller:IsState(Controller.MOVE_RIGHT) == true and not self.jumpBoostTimer:IsPastSimMS(1000) and self.Vel.X < 5 then
+					self.Vel = self.Vel + Vector(8, 0) * TimerMan.DeltaTimeSecs * 1.0
+				end
+			end
+			if (player and self.feetContact[1] == true or self.feetContact[2] == true) and self.jumpStop:IsPastSimMS(100) then
+				self.isJumping = false
+				self.wasInAir = false;
+			end
+		end
+	end
 	
 	if self.voiceSound:IsBeingPlayed() and not player then
 		self.voiceSound:Stop(-1);

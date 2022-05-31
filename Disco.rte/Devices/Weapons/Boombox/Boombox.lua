@@ -19,6 +19,26 @@ function Update(self)
 
 	if self:GetRootParent().UniqueID ~= self.UniqueID then
 		self.parent = ToAHuman(self:GetRootParent())
+	else
+		self.parent = nil;
+	end
+	
+	if self.checkIfDropped then
+		self.checkIfDropped = false;
+		if not self.parent then
+			self.turnedOn = false;
+			
+			self:RemoveNumberValue("Song")
+
+			self.onFirstSound:Stop(-1);
+			self.onSound:Stop(-1);
+			self.wantToBeFree:Stop(-1);
+			self.wantToBeFreeEcho:Stop(-1);
+			self.Rave:Stop(-1);
+			self.raveEcho:Stop(-1);
+			self.Secret:Stop(-1);
+			self.secretEcho:Stop(-1);
+		end
 	end
 	
 	self.onFirstSound.Pos = self.Pos;
@@ -34,16 +54,16 @@ function Update(self)
 	self.Rave.Volume = TimerMan.TimeScale;
 	self.Secret.Volume = TimerMan.TimeScale;
 	
-	self.wantToBeFreeEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
-	self.raveEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
-	print(self.raveEcho.Volume)
-	self.secretEcho.Volume = 0.2 + (4 - (TimerMan.TimeScale * 4));
+	self.wantToBeFreeEcho.Volume = 0.2 + (1 - (TimerMan.TimeScale));
+	self.raveEcho.Volume = 0.2 + (1 - (TimerMan.TimeScale));
+	self.secretEcho.Volume = 0.2 + (1 - (TimerMan.TimeScale));
 	
 	if self.turnedOn and not (self.wantToBeFreeEcho:IsBeingPlayed() or self.raveEcho:IsBeingPlayed() or self.secretEcho:IsBeingPlayed()) then
-		self:Activate();
+		self:SetValueExists("Switch", 1)
 	end
 
-	if self.FiredFrame and (self.parent and ((self.parent.EquippedItem and self.parent.EquippedItem.UniqueID == self.UniqueID) or (self.parent.EquippedBGItem.UniqueID == self.UniqueID and not self.parent.EquippedItem))) then
+	if self:NumberValueExists("Switch") then
+		self:RemoveNumberValue("Switch")
 		if not self.turnedOn then
 			self.turnedOn = true
 			self.onFirstSound:Play(self.Pos);
@@ -108,19 +128,27 @@ function Destroy(self)
 	
 end
 
-function OnDetach(self)
+function OnDetach(self, mo)
 
-	self.turnedOn = false;
-	
-	self:RemoveNumberValue("Song")
+	if IsArm(mo) then
+		-- set a flag to check on Update whether we're attached to an actor still, indicating we just switched hands
+		-- checking rootparent here will return self
+		self.checkIfDropped = true;
+	else
 
-	self.onFirstSound:Stop(-1);
-	self.onSound:Stop(-1);
-	self.wantToBeFree:Stop(-1);
-	self.wantToBeFreeEcho:Stop(-1);
-	self.Rave:Stop(-1);
-	self.raveEcho:Stop(-1);
-	self.Secret:Stop(-1);
-	self.secretEcho:Stop(-1);
+		self.turnedOn = false;
+		
+		self:RemoveNumberValue("Song")
+
+		self.onFirstSound:Stop(-1);
+		self.onSound:Stop(-1);
+		self.wantToBeFree:Stop(-1);
+		self.wantToBeFreeEcho:Stop(-1);
+		self.Rave:Stop(-1);
+		self.raveEcho:Stop(-1);
+		self.Secret:Stop(-1);
+		self.secretEcho:Stop(-1);
+		
+	end
 	
 end

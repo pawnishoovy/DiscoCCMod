@@ -1,0 +1,170 @@
+function Create(self)
+
+	self.deathTranscriptions = {};
+	self.deathTranscriptions[1] = {"Endurance", "This isn't a real heart attack. You should probably just exercise more."}
+	self.deathTranscriptions[2] = {"Pain Threshold", "Nice try. The tears come streaming down your face as you crumble to the ground."}
+	self.deathTranscriptions[3] = {"Endurance", "Feeling nausea? Vomiting? Tenderness or pain around the liver area? Tiny red lines on the skin above waist-level? The clock is ticking."}
+	self.deathTranscriptions[4] = {"Half-light", "Very, very bad. This is the *end*, bad."}
+	self.deathTranscriptions[5] = {"Pain Threshold", "Nope. Sorry. You don't. Not this time."}
+	self.deathTranscriptions[6] = {"Endurance", "Don't think this is a sign of anything other than your heart failing."}
+	self.deathTranscriptions[7] = {"Pain Threshold", "Yeah, screaming isn't happening on account of extreme shortness of breath. You're just making it worse. Oh, God, it's painful."}
+	self.deathTranscriptions[8] = {"Volition", "All you feel is pain and weakness. You have to surrender now. We all do. It gets *so* dark. You don't even see her face, like you always thought you would. You only see pain, and fear."}
+	self.deathTranscriptions[9] = {"Physical Instrument", "You feel something in your chest. An unnatural pressure. It's spreading to your left arm, your jaw."}
+	self.deathTranscriptions[10] = {"Volition", "There's no shame in surrendering now. We all do. It gets *so* dark. You only see pain and fear."}
+	self.deathTranscriptions[11] = {"Half-light", "Abort, abort! No, shit, it's too late."}
+	self.deathTranscriptions[12] = {"Half-light", "Fucking shit, I'm *scared*. What do I do? Who do I call?"}
+	self.deathTranscriptions[13] = {"Half-light", "Here it comes. Death."}
+	self.deathTranscriptions[14] = {"Half-light", "There's no way. You're just going to die. Just close your eyes when it happens."}
+	self.deathTranscriptions[15] = {"Pain Threshold", "The pain is too immense to scream. It pushes the air out of your lungs. Everything goes dark, a distant blur as you recede into it."}
+	self.deathTranscriptions[16] = {"Pain Threshold", "Nothing. A persisting darkness. Dancing lights of pain, distant shadows cast by them, like a hellish play..."}
+	self.deathTranscriptions[17] = {"Pain Threshold", "Something inside your pelvis *explodes*. Your entire lower body is on fire, and your legs can't support you. You fall down like a ragdoll."}
+	self.deathTranscriptions[18] = {"Interfacing", "Warm blood pools underneath you. It's sticky, and there's so much of it..."}
+	
+	self.gibDeathTranscriptions = {};
+	self.gibDeathTranscriptions[1] = {"Ancient Reptillian Brain", "This is death. One more door, baby! One more door!"}
+	self.gibDeathTranscriptions[2] = {"Ancient Reptillian Brain", "There is nothing. Only warm primordial blackness. Your conscious ferments in it, no larger than a single grain of malt. You don't have to do anything anymore."}
+	self.gibDeathTranscriptions[3] = {"Ancient Reptillian Brain", "Alright, Nothing-Town to Fuck-All-Borough!"}
+	self.gibDeathTranscriptions[4] = {"Ancient Reptillian Brain", "I was wrong to let you go. I should've kept you here. Is it bright where you are? Is it *terrifying*? Have you felt *the love*?"}
+	self.gibDeathTranscriptions[5] = {"Ancient Reptillian Brain", "You are *way* cool. Cooler than the bottom of the sea. Too cool for this world..."}
+	self.gibDeathTranscriptions[6] = {"Ancient Reptillian Brain", "This respite... you've earned it, brother. Bask in the darkness. Let it swallow you up, and swivel you around, while you forget *everything* you've managed to remember."}
+	self.gibDeathTranscriptions[7] = {"Ancient Reptillian Brain", "There are no days here. There are no weeks. Just black tape spinning, on repeat, until the end."}
+	self.gibDeathTranscriptions[8] = {"Ancient Reptillian Brain", "Blackness, blackness, blackness! The ultimate disco! The ruins of your life behind you, still smoldering. Ashes rise, but you're not looking."}
+	self.gibDeathTranscriptions[9] = {"Limbic System", "The fight? There is no fight. The fight is over. It was lost a thousand years ago. You have laid here forever. Keep falling... deeper... take the door."}
+	self.gibDeathTranscriptions[10] = {"Limbic System", "Kim? There is no Kim. There is no fight. It's over."}
+	self.gibDeathTranscriptions[11] = {"Limbic System", "You wouldn't like it if I told you what was back there. Why do you think you had to bludgeon yourself into oblivion? Or did you not sense yourself marinating? Poured so much on yourself, got a bit carried away, did we chef?"}
+	self.gibDeathTranscriptions[12] = {"Limbic System", "You lost."}
+	
+	self.painLightTranscriptions = {};
+	self.painLightTranscriptions[1] = {"Pain Threshold", "There it is again, like a swarm of hornets buzzing around your skull. A strange tingling you can almost smell."}
+	self.painLightTranscriptions[2] = {"Pain Threshold", "The pain, it is nothing. Revel in it. Absorb it. Gain power from it."}
+	self.painLightTranscriptions[3] = {"Pain Threshold", "Oh, whatever. This barely registers as damage."}
+	self.painLightTranscriptions[4] = {"Physical Instrument", "Even under the increased force on your skull, there is no pain. Just the sound of your own blood gushing in there, feeding your mind with oxygen."}
+	self.painLightTranscriptions[5] = {"Pain Threshold", "A little pain there. A prick."}
+	self.painLightTranscriptions[6] = {"Pain Threshold", "This kind of stuff would hurt, if not for you not caring about little things like that."}
+	self.painLightTranscriptions[7] = {"Half-light", "Feels good for some reason."}
+	self.painLightTranscriptions[8] = {"Pain Threshold", "The pain is barely noticeable under the adrenaline rush."}
+	
+	self.painMediumTranscriptions = {};
+	self.painMediumTranscriptions[1] = {"Volition", "Not again. Take the pain, God-damnit. At least take that."}
+	self.painMediumTranscriptions[2] = {"Pain Threshold", "Sharp pain shoots through your hip, throbbing."}
+	self.painMediumTranscriptions[3] = {"Pain Threshold", "You can take this. Blossom like a pain flower."}
+	self.painMediumTranscriptions[4] = {"Endurance", "A small agony. Miniscule bones may have fractured."}
+	self.painMediumTranscriptions[5] = {"Pain Threshold", "A flash of pain interrupts your thought, making you grimace."}
+	self.painMediumTranscriptions[6] = {"Pain Threshold", "A flash of pain interrupts you, making you grimace instead of spewing out the words."}
+	self.painMediumTranscriptions[7] = {"Pain Threshold", "A dull pain flashes through your mind."}
+	self.painMediumTranscriptions[8] = {"Pain Threshold", "Ouch."}
+	self.painMediumTranscriptions[9] = {"Pain Threshold", "Powered by pain."}
+	self.painMediumTranscriptions[10] = {"Pain Threshold", "Little black spots dance on your retinas. It's almost pleasurable."}
+	self.painMediumTranscriptions[11] = {"Pain Threshold", "You can take it. Just breathe in slowly."}
+	self.painMediumTranscriptions[12] = {"Pain Threshold", "You can take this one too. Just breathe in slowly."}
+	self.painMediumTranscriptions[13] = {"Pain Threshold", "You can take it. Just breathe."}
+	self.painMediumTranscriptions[14] = {"Pain Threshold", "You can take this. It's not nearly as bad as the last time."}
+	self.painMediumTranscriptions[15] = {"Volition", "It hurts, but keep your cool, you've got this."}
+	self.painMediumTranscriptions[16] = {"Pain Threshold", "A bitter cringe. It *hurts*."}
+	self.painMediumTranscriptions[17] = {"Volition", "Keep it in now. Don't over-react. Breathe."}
+	
+	self.painStrongTranscriptions = {};
+	self.painStrongTranscriptions[1] = {"Volition", "Test your limits. Surpass them. Dance 'til you drop. Dance 'til you die, if you must."}
+	self.painStrongTranscriptions[2] = {"Pain Threshold", "I'm sorry, this didn't do anything. Usually hurting yourself does something for you."}
+	self.painStrongTranscriptions[3] = {"Pain Threshold", "It would make a million years of evolution, or a total reversal in the condition of the world, for your pain to end."}
+	self.painStrongTranscriptions[4] = {"Pain Threshold", "Feels like someone set a mustard field ablaze, right inside your nose, then drenched it in tear-gas. Your nose is a singular source of pain, but at the same time you don't remember the last time you felt so alive."}
+	self.painStrongTranscriptions[5] = {"Pain Threshold", "Almost snapped your neck, but I fucking got this. No pain. No pain."}
+	self.painStrongTranscriptions[6] = {"Pain Threshold", "Agonizing pain.	"}
+	self.painStrongTranscriptions[7] = {"Pain Threshold", "This is bad. Feels like sharp stones grinding in your chest, and keeping you from moving."}
+	self.painStrongTranscriptions[8] = {"Pain Threshold", "A sharp pain shoots up your side and into your stomach. You must not look too good. Luckily, it passes."}
+	self.painStrongTranscriptions[9] = {"Pain Threshold", "A flash of pain, like slamming your fist against iron."}
+	self.painStrongTranscriptions[10] = {"Pain Threshold", "The pain is so bad."}
+	self.painStrongTranscriptions[11] = {"Pain Threshold", "You can take it. Just don't lean on that leg of yours too heavily."}
+	self.painStrongTranscriptions[12] = {"Endurance", "The pain flows over your entire body like an awful shock. A grim knowing rises from within. Half of your body must be *gone*."}
+	self.painStrongTranscriptions[13] = {"Endurance", "Feels slick and warm with blood. The pain is too strong to know what has happened there. Even clutching to your consciousness takes everything you've got."}
+	self.painStrongTranscriptions[14] = {"Pain Threshold", "Get ready for a world pain, man..."}
+	self.painStrongTranscriptions[15] = {"Endurance", "It's too much. You can feel your vertebrae starting to crack, your muscles groaning..."}
+	self.painStrongTranscriptions[16] = {"Pain Threshold", "A volcano of burning pain erupts from your left shoulder."}
+	
+	self.recoverTranscriptions = {};
+	self.recoverTranscriptions[1] = {"Pain Threshold", "Finally, the stabbing recedes. You could try doing it again to see how painful it gets - very. But, do you really want to risk it?"}
+	self.recoverTranscriptions[2] = {"Endurance", "Finally, the pressure recedes. You find yourself covered in cold sweat. Try not to move too fast. Maybe that will keep you from collapsing."}
+	self.recoverTranscriptions[3] = {"Physical Instrument", "You feel the pain recede. You just need to get up and dust yourself off."}
+	self.recoverTranscriptions[4] = {"Volition", "It's nothing. You're alive, that's what matters."}
+	self.recoverTranscriptions[5] = {"Volition", "No you don't. You can keep it in. You can keep *anything* in."}
+	self.recoverTranscriptions[6] = {"Half-light", "Yes, bullets will fly. They always do. And the coil is fleshy and mush and permeable. Resist death."}
+	self.recoverTranscriptions[7] = {"Physical Instrument", "Things are not as bad as they look. Sure, you have high blood pressure from metabolizing heroic quantities of ethanol, but you are robustly built. You will survive."}
+	self.recoverTranscriptions[8] = {"Physical Instrument", "You hear your heart pumping, fast and irregular. Your joints ache and you feel *old*... but still alive, somehow."}
+	self.recoverTranscriptions[9] = {"Endurance", "Merely standing up makes you sweat profusely. Your breathing is erratic. Your own heartbeat in your ears grows frantic, and you feel your blood pressure rise."}
+	self.recoverTranscriptions[10] = {"Pain Threshold", "Maybe don't beat yourself anymore, though. You're not immortal."}
+	self.recoverTranscriptions[11] = {"Pain Threshold", "Phew. Got off lucky there. That could've resulted in a world of hurt."}
+	self.recoverTranscriptions[12] = {"Volition", "Get it together, boy. You've got to hold on. No matter how bad."}
+	
+	self.spotTranscriptions = {};
+	self.spotTranscriptions[1] = {"Half-light", "He's open. Rip into him. Right hook, escalate it. Get *intimate* with him. Bring the hurt closer."}
+	self.spotTranscriptions[2] = {"Half-light", "Rip into him. Right hook. Get *intimate* with him. Bring the hurt closer."}
+	self.spotTranscriptions[3] = {"Half-light", "Do it. NOW."}
+	self.spotTranscriptions[4] = {"Half-light", "This is your chance. Rip into him with a punch and catch him off-guard."}
+	self.spotTranscriptions[5] = {"Half-light", "Time for a threat."}
+	self.spotTranscriptions[6] = {"Half-light", "There the grandness, there is fear."}
+	self.spotTranscriptions[7] = {"Authority", "Men like this only respect two things. Strength, and fear."}
+	self.spotTranscriptions[8] = {"Volition", "Never forget. The whole world's a wooden house, and you're a God-damn flamethrower."}
+	self.spotTranscriptions[9] = {"Authority", "You're a *god*. An angry, but just god."}
+	self.spotTranscriptions[10] = {"Authority", "People try to back away from you, or even slip out of the door. But you screamed, 'I am the God-damned *law*, and you have to listen to me. You are all suspects in a murder investigation.'"}
+	self.spotTranscriptions[11] = {"Half-light", "He's about to open fire."}
+	self.spotTranscriptions[12] = {"Half-light", "He's about to snap and shoot someone *right now*."}
+	self.spotTranscriptions[13] = {"Half-light", "Whatever you do, stop wasting your time thinking about it."}
+	self.spotTranscriptions[14] = {"Authority", "He's not afraid of jail. He's afraid of something else."}
+	self.spotTranscriptions[15] = {"Reaction Speed", "You feel your legs shaking under you, and your gun hand move to your holster. To grab the gun."}
+	self.spotTranscriptions[16] = {"Half-light", "Tear into him. Pile it on him. Everything you got on him. The more the better."}
+	self.spotTranscriptions[17] = {"Half-light", "A spasm of rage, sudden and uncontrollable."}
+	self.spotTranscriptions[18] = {"Half-light", "The danger levels here are hard to read."}
+	self.spotTranscriptions[19] = {"Half-light", "They're *afraid*. All of them. Trembling reads in the wind. They'll run, scatter soon, one by one."}
+	self.spotTranscriptions[20] = {"Half-light", "He's gonna do it. He's gonna shoot."}
+	self.spotTranscriptions[21] = {"Reaction Speed", "Now. Now is the time. Stop waiting."}
+	self.spotTranscriptions[22] = {"Hand/Eye Coordination", "Your muscles tense up. The vision in your dead angle darkens."}
+	self.spotTranscriptions[23] = {"Half-light", "Shoot him in the mouth. Shoot him before he shoots you."}
+	self.spotTranscriptions[24] = {"Half-light", "Around you, time starts moving again. The sounds of violence, and panic."}
+	self.spotTranscriptions[25] = {"Reaction Speed", "Oh God, watch out!"}
+	self.spotTranscriptions[26] = {"Half-light", "Just like that, instinct took over."}
+	self.spotTranscriptions[27] = {"Half-light", "Now fire. Fuck them up. Do it. The muscles on your back tense up."}
+	self.spotTranscriptions[28] = {"Reaction Speed", "It's as time has frozen somehow. Yeah, this is going to be *way* cool."}
+	self.spotTranscriptions[29] = {"Half-light", "Blam! Straight in the eye. Straight in the ol' eye-orb. In, the *looking ball*."}
+	self.spotTranscriptions[30] = {"Half-light", "This man looks like trouble. You might not want to get into this right now. Plenty of time later..."}
+	self.spotTranscriptions[31] = {"Reaction Speed", "His fingers are twitching. That's a draw reflex. He's about to draw."}
+	self.spotTranscriptions[32] = {"Volition", "Easy. Easy now."}
+	
+	self.gunAimTranscriptions = {};
+	self.gunAimTranscriptions[1] = {"Hand/Eye Coordination", "Hand on the hair-trigger, on a calm day like this..."}
+	self.gunAimTranscriptions[2] = {"Hand/Eye Coordination", "You stand with your feet planted firmly on the ground, and your left hand supporting your gun-arm."}
+	self.gunAimTranscriptions[3] = {"Hand/Eye Coordination", "Your field of view narrows."}
+	self.gunAimTranscriptions[4] = {"Interfacing", "Holding the gun feels natural and satisfying. It's like an extension of your arm, the polished wooden handle almost fusing into your palm."}
+	self.gunAimTranscriptions[5] = {"Interfacing", "It reminds you of the day you first held it, with fear and respect, hoping you don't have to use it in vain. The sun was out in Jamrock, it was so long ago."}
+	self.gunAimTranscriptions[6] = {"Half-Light", "This gun, Sunrise Parabellum, will be the only thing standing between you and the all-consuming nothingness that threatens to eat the world."}
+	self.gunAimTranscriptions[7] = {"Authority", "A Villiers 9mm pistol, where Insulindian steel meets Revachol craftsmanship. With it, thou wilt protect the fair people of thine homeland, and keep the visitors *at check*."}
+	self.gunAimTranscriptions[8] = {"Inland Empire", "This is your gun. Now if we could only find your personality..."}
+	self.gunAimTranscriptions[9] = {"Savoir-Faire", "This is your gun, and in the world of unarmed civilians, a man with a gun is king, but in a wholesome and life-affirming way. You just keep the wheels of the world spinning, and maybe there's some money to be made on the side."}
+	self.gunAimTranscriptions[10] = {"", "The gun - your gun - can be an item of destruction, but also creation. The Villiers-LaSalle art project. Time to shoot some beauty into the heart of Martinaise"}
+	self.gunAimTranscriptions[11] = {"Endurance", "Although only useful against assailants made of flesh and blood, the gun is still yours."}
+	self.gunAimTranscriptions[12] = {"Reaction Speed", "At last. The fastest hand in Revachol reunited with the slickest tool in the North. You're gonna be the envy of the town, baby."}
+	self.gunAimTranscriptions[13] = {"Interfacing", "Your hand twitches. It feels familiar, doesn't it?"}
+	self.gunAimTranscriptions[14] = {"Reaction Speed", "0.4 seconds remain."}
+	self.gunAimTranscriptions[15] = {"Reaction Speed", "0.6 seconds remain."}	
+
+	self.gunShootTranscriptions = {};
+	self.gunShootTranscriptions[1] = {"Interfacing", "A plume of smoke and fire erupts from the gun, and your hand goes numb from the explosion."}
+	self.gunShootTranscriptions[2] = {"Interfacing", "Another soft explosion, like a firecracker, goes off in your hand."}
+	self.gunShootTranscriptions[3] = {"Perception", "You hear an explosion within the weapon in your hands. Your ears are still ringing."}
+	self.gunShootTranscriptions[4] = {"Interfacing", "A plume of smoke erupts from the barrel. Your hand goes numb from the explosion. With your ears still ringing, you lower the weapon to see what happened."}
+	self.gunShootTranscriptions[5] = {"Interfacing", "The cold piece of gun metal is surprisingly light. Your fingers fit right through the guard, instinctively resting on the trigger."}
+	
+	self.headshotHitTranscriptions = {};
+	self.headshotHitTranscriptions[1] = {"Hand/Eye Coordination", "This time feels different. You aim higher, as if pulled by a magnet. Your hand goes numb from the explosion, and a plume of smoke erupts from the gun."}
+	self.headshotHitTranscriptions[2] = {"Hand/Eye Coordination", "You know, you don't feel like too bad a of shot yourself..."}	
+	
+	self.hitTranscriptions = {};
+	self.hitTranscriptions[1] = {"Authority", "With your hand numb from the recoil, you look at the body slumped down. For a moment, the man appears to *kneel* in front of you."}	
+	
+	self.partialMissTranscriptions = {};
+	self.partialMissTranscriptions[1] = {"Hand/Eye Coordination", "A small explosion expels the bullet from the chamber. With a puff of smoke it hits the man square in the chest."}	
+
+	self.totalMissTranscriptions = {};
+	self.totalMissTranscriptions[1] = {"Hand/Eye Coordination", "No. It's off. *Way* off."}		
+	self.totalMissTranscriptions[2] = {"Hand/Eye Coordination", "A lot of things were wrong with that shot."}		
+	
+end
