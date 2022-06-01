@@ -147,7 +147,7 @@ function Update(self)
 					local distance = difference.Magnitude
 					
 					local factor = distance / 100
-					thershold = math.floor(factor + (1 - self.accuracy) * 10 * math.abs(math.sin(self.accuracySway)))
+					thershold = math.floor(factor + (1 - self.accuracy) * 10 * math.abs(math.sin(self.accuracySway))) + 2
 					
 					self.parent:SetNumberValue("SkillChanceThreshold", thershold)
 					if self:IsActivated() then
@@ -230,7 +230,7 @@ function Update(self)
 				
 				if actor and IsAHuman(actor) then
 					actor = ToAHuman(actor)
-					if math.random() <= self.accuracy then
+					if actor.Head and math.random() <= self.accuracy then
 						local rand = Vector(RangeRand(-1, 1), RangeRand(-1, 1)) * (1 - self.accuracy) * 2
 						PrimitiveMan:DrawCirclePrimitive(actor.Head.Pos + rand, actor.Head.Radius + 7 * (1 - self.accuracy), color)
 					end
@@ -321,17 +321,44 @@ function Update(self)
 		self.accuracy = 0
 		
 		-- Kill
-		if self.targetingSuccess then
-			if self.targetingActor then
-				local actor = MovableMan:FindObjectByUniqueID(self.targetingActor)
-				if actor and IsAHuman(actor) then
-					actor = ToAHuman(actor)
+		if self.targetingSuccess and self.targetingActor then
+			local actor = MovableMan:FindObjectByUniqueID(self.targetingActor)
+			if actor and IsAHuman(actor) then
+				actor = ToAHuman(actor)
+				
+				actor.Status = 1
+				actor.Vel = actor.Vel + Vector(10 * self.FlipFactor,0):RadRotate(self.RotAngle)
+				actor.AngularVel = actor.AngularVel + RangeRand(-1, 1) * 5
+				actor.Health = actor.Health - 50
+				if math.random() < 0.25 then
 					if actor.Head then
-						actor.Head:GibThis()
+						if math.random() < 0.5 then
+							local head = actor.Head
+							actor:RemoveAttachable(head, true, true)
+							head.Vel = actor.Vel + Vector(10 * (math.random() - 0.5), -10)
+						else
+							actor.Head:GibThis()
+						end
+					end
+				else
+					local limbs = {actor.FGArm, actor.BGArm, actor.FGLeg, actor.BGLeg}
+					local limbsShuffled = {}
+					for i, v in ipairs(limbs) do
+						local pos = math.random(1, #limbsShuffled + 1)
+						table.insert(limbsShuffled, pos, v)
+					end
+					for i, limb in ipairs(limbsShuffled) do
+						
+						if limb and limb:GetParent() then
+							limb:GibThis()
+							break
+						end
 					end
 				end
+				
 			end
 		end
+		
 		self.targetingSuccess = false
 		
 		-- Smoke puff

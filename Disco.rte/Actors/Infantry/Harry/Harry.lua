@@ -119,6 +119,29 @@ function DiscoHarry.diceRoll(self, threshold)
 	return result
 end
 
+function DiscoHarry.playVoice(self, sound, priority)
+	if priority > self.voiceSoundPriority or not self.voiceSound:IsBeingPlayed() then
+		local sounds = self.voiceSounds[sound]
+		local index = math.random(1, #sounds)
+		self.voiceSound = sounds[index]
+		self.voiceSound:Play(self.Pos)
+		self.voiceSoundPriority = priority
+		
+		local data = DiscoHarryVO.transcriptions[sound][index]
+		local skill = data[1]
+		local skillIndex = DiscoHarryVO.skillIndexes[skill]
+		local text = data[2]
+		print(skill)
+		print(skillIndex)
+		self.voiceSoundTranscription = text
+		self.voiceSoundTranscriptionIcon = skillIndex
+		self.voiceSoundTranscriptionDuration = 1
+		
+		return true
+	end
+	return false
+end
+
 function Create(self)
 	self.skillCheckThreshold = threshold
 	self.skillCheckQueued = false
@@ -146,16 +169,48 @@ function Create(self)
 	self.healthRecoverSound = CreateSoundContainer("Harry Health Recover", "Disco.rte")
 	self.finalDeathLoop = CreateSoundContainer("Harry Final Death Loop", "Disco.rte")
 	
-	self.voiceSounds = {
-	Death = CreateSoundContainer("Harry VO Death", "Disco.rte"),
-	GibDeath = CreateSoundContainer("Harry VO GibDeath", "Disco.rte"),
-	PainLight = CreateSoundContainer("Harry VO PainLight", "Disco.rte"),
-	PainMedium = CreateSoundContainer("Harry VO PainMedium", "Disco.rte"),
-	PainStrong = CreateSoundContainer("Harry VO PainStrong", "Disco.rte"),
-	Recover = CreateSoundContainer("Harry VO Recover", "Disco.rte"),
-	Spot = CreateSoundContainer("Harry VO Spot", "Disco.rte")};
+	-- self.voiceSounds = {
+	-- Death = CreateSoundContainer("Harry VO Death", "Disco.rte"),
+	-- GibDeath = CreateSoundContainer("Harry VO GibDeath", "Disco.rte"),
+	-- PainLight = CreateSoundContainer("Harry VO PainLight", "Disco.rte"),
+	-- PainMedium = CreateSoundContainer("Harry VO PainMedium", "Disco.rte"),
+	-- PainStrong = CreateSoundContainer("Harry VO PainStrong", "Disco.rte"),
+	-- Recover = CreateSoundContainer("Harry VO Recover", "Disco.rte"),
+	-- Spot = CreateSoundContainer("Harry VO Spot", "Disco.rte")};
+	self.voiceSoundsCount = {
+		["Death"] = 18,
+		["Gib Death"] = 12,
+		["Gun Aim"] = 15,
+		["Gun Shoot"] = 5,
+		["Headshot Hit"] = 2,
+		["Hit"] = 1,
+		["Pain Light"] = 8,
+		["Pain Medium"] = 17,
+		["Pain Strong"] = 16,
+		["Partial Miss"] = 1,
+		["Recover"] = 12,
+		["Spot"] = 32
+	}
 	
-	self.voiceSound = CreateSoundContainer("Harry VO Spot", "Disco.rte") -- placeholder
+	self.voiceSounds = {}
+	
+	for key, count in pairs(self.voiceSoundsCount) do
+		local containers = {}
+		for i = 1, count do
+			containers[i] = CreateSoundContainer("Harry VO " .. key .. " " .. tostring(i), "Disco.rte")
+		end
+		self.voiceSounds[key] = containers
+	end
+	
+	self.voiceSound = CreateSoundContainer("Harry VO Spot 1", "Disco.rte") -- placeholder
+	self.voiceSoundPriority = -1
+	self.voiceSoundTranscription = ""
+	self.voiceSoundTranscriptionIcon = -1
+	self.voiceSoundTranscriptionDuration = 1
+	
+	self.iconDisplayUID = nil
+	self.iconDisplayDuration = 16;
+	self.iconDisplayTimer = Timer();
 
 	self.updateTimer = Timer();
 
@@ -170,7 +225,6 @@ function Create(self)
 	self.regenInitialDelay = 7000
 	self.regenInitialTimer = Timer();
 	self.regenDelay = 300;
-	self.regenTimer = Timer();
 	self.regenTimer = Timer();
 	
 	self.blinkTimer = Timer()
@@ -222,6 +276,7 @@ function Update(self)
 	-- JUMPING CODE
 	
 	if player then -- AI doesn't update its own foot checking when playercontrolled so we have to do it
+		
 		if self.Vel.Y > 10 then
 			self.wasInAir = true;
 		else
@@ -329,12 +384,15 @@ function Update(self)
 			self.voiceSound:Stop(-1);
 			if not self.Head then
 				self.finalDeath = true;
-				self.voiceSound = self.voiceSounds.GibDeath
-				self.voiceSound:Play(self.Pos);
+				--self.voiceSound = self.voiceSounds.GibDeath
+				--self.voiceSound:Play(self.Pos);
+				DiscoHarry.playVoice(self, "Gib Death", 101)
+				
 				self.finalDeathLoop:Play(self.Pos);
 			else
-				self.voiceSound = self.voiceSounds.Death
-				self.voiceSound:Play(self.Pos);
+				--self.voiceSound = self.voiceSounds.Death
+				--self.voiceSound:Play(self.Pos);
+				DiscoHarry.playVoice(self, "Death", 100)
 			end
 
 		end
@@ -372,15 +430,18 @@ function Update(self)
 				if not self.voiceSound:IsBeingPlayed() then
 					if self.oldHealth - self.Health > 40 then
 						self.healthDamageSound:Play(self.Pos);
-						self.voiceSound = self.voiceSounds.PainStrong
-						self.voiceSound:Play(self.Pos);
+						--self.voiceSound = self.voiceSounds.PainStrong
+						--self.voiceSound:Play(self.Pos);
+						DiscoHarry.playVoice(self, "Pain Strong", 2)
 					elseif self.oldHealth - self.Health > 15 then
 						self.healthDamageSound:Play(self.Pos);
-						self.voiceSound = self.voiceSounds.PainMedium
-						self.voiceSound:Play(self.Pos);
+						--self.voiceSound = self.voiceSounds.PainMedium
+						--self.voiceSound:Play(self.Pos);
+						DiscoHarry.playVoice(self, "Pain Medium", 1)
 					elseif  self.oldHealth - self.Health > 5 then
-						self.voiceSound = self.voiceSounds.PainLight
-						self.voiceSound:Play(self.Pos);
+						--self.voiceSound = self.voiceSounds.PainLight
+						--self.voiceSound:Play(self.Pos);
+						DiscoHarry.playVoice(self, "Pain Light", 1)
 					end
 				end
 			end
@@ -439,8 +500,9 @@ function Update(self)
 				self.Status = 0;
 				if player then
 					self.healthRecoverSound:Play(self.Pos);
-					self.voiceSound = self.voiceSounds.Recover
-					self.voiceSound:Play(self.Pos);
+					DiscoHarry.playVoice(self, "Recover", 1)
+					--self.voiceSound = self.voiceSounds.Recover
+					--self.voiceSound:Play(self.Pos);
 				end
 			else
 				self.finalDeath = true;
@@ -466,6 +528,63 @@ function Update(self)
 		-- HUD
 		if player then
 			local origin = self.Pos + Vector(0, 50)
+			
+			-- Text
+			if self.voiceSound:IsBeingPlayed() then
+				self.voiceSoundTranscriptionDuration = 1
+			end
+			if self.voiceSoundTranscriptionDuration > 0 then
+				self.voiceSoundTranscriptionDuration = math.max(self.voiceSoundTranscriptionDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+				
+				local originText = self.Pos + Vector(70 * -self.FlipFactor, 0)
+				
+				if self.voiceSoundTranscriptionIcon > 0 then
+					local skillBoxSize = Vector(25, 35)
+					PrimitiveMan:DrawBoxFillPrimitive(originText - skillBoxSize * 0.5, originText + skillBoxSize * 0.5, 245)
+					
+					local spawn = false
+					if self.iconDisplayTimer:IsPastSimMS(self.iconDisplayDuration) then
+						self.iconDisplayTimer:Reset()
+						spawn = true
+					end
+					
+					if self.iconDisplayUID then
+						local icon = MovableMan:FindObjectByUniqueID(self.iconDisplayUID)
+						if icon then
+							icon.Pos = originText
+						end
+					end
+					if spawn then
+						local glow = CreateMOPixel("Harry Skill Glow " .. tostring(self.voiceSoundTranscriptionIcon), "Disco.rte");
+						glow.Pos = originText;
+						MovableMan:AddParticle(glow);
+						
+						self.iconDisplayUID = glow.UniqueID
+					end
+				end
+				
+				local textSplit = DiscoHarryVO.Split(self.voiceSoundTranscription, " ")
+				local textLines = {}
+				local textLine = ""
+				for i, line in ipairs(textSplit) do
+					if string.sub(line, #line, #line) == "." then
+						textLine = textLine .. line
+						table.insert(textLines, textLine)
+						textLine = ""
+					else
+						textLine = textLine .. line .. " "
+					end
+				end
+				
+				local textMode = not self.HFlipped and 2 or 0
+				
+				local maxi = #textLines
+				for i, line in ipairs(textLines) do
+					local factor = (i - 1) * (maxi / (maxi - 1)) - maxi * 0.5
+					local offset = math.floor(factor * 3)
+					PrimitiveMan:DrawTextPrimitive(originText + Vector(30 * -self.FlipFactor, offset), line, true, textMode)
+				end
+			end
 			
 			-- Display skill check result
 			if self.skillCheckStartSound:IsBeingPlayed() then
@@ -629,8 +748,9 @@ function Update(self)
 	if (not self.deathSequenceStarted or self.finalDeath) and self.toHeal == true and self.regenInitialTimer:IsPastSimMS(self.regenInitialDelay) and not self.Healing then
 		self.Healing = true;
 		if not self.voiceSound:IsBeingPlayed() and self.Health < 30 and player then	
-			self.voiceSound = self.voiceSounds.Recover
-			self.voiceSound:Play(self.Pos);
+			DiscoHarry.playVoice(self, "Recover", 1)
+			--self.voiceSound = self.voiceSounds.Recover
+			--self.voiceSound:Play(self.Pos);
 		end
 	end
 	
@@ -685,10 +805,11 @@ function Update(self)
 					self.spotLoseTimer:Reset();
 					if self.spotTarget == nil then
 						self.spotTarget = FoundMO
-						if not self.voiceSound:IsBeingPlayed() then
-							self.voiceSound = self.voiceSounds.Spot
-							self.voiceSound:Play(self.Pos);
-						end
+						DiscoHarry.playVoice(self, "Spot", 1)
+						-- if not self.voiceSound:IsBeingPlayed() then
+							-- self.voiceSound = self.voiceSounds.Spot
+							-- self.voiceSound:Play(self.Pos);
+						-- end
 					end
 				end
 			elseif self.spotLoseTimer:IsPastSimMS(self.spotLoseDelay) then
