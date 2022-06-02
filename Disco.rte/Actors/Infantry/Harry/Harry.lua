@@ -120,7 +120,8 @@ function DiscoHarry.diceRoll(self, threshold)
 end
 
 function DiscoHarry.playVoice(self, sound, priority)
-	if priority > self.voiceSoundPriority or not self.voiceSound:IsBeingPlayed() then
+	if self.Health > 0 and priority > self.voiceSoundPriority or not self.voiceSound:IsBeingPlayed() then
+		print(sound)
 		local sounds = self.voiceSounds[sound]
 		local index = math.random(1, #sounds)
 		self.voiceSound = sounds[index]
@@ -133,6 +134,8 @@ function DiscoHarry.playVoice(self, sound, priority)
 		local text = data[2]
 		print(skill)
 		print(skillIndex)
+		print("index=")
+		print(index)
 		self.voiceSoundTranscription = text
 		self.voiceSoundTranscriptionIcon = skillIndex
 		self.voiceSoundTranscriptionDuration = 1
@@ -405,16 +408,21 @@ function Update(self)
 		if not player then
 			self.voiceSound:Stop(-1);
 		end
-		if not self.voiceSound:IsBeingPlayed() and not self.finalDeath then
-			self.deathSaveRoll = true;
-			DiscoHarry.diceRollQueue(self, 4 * math.max(1, self.timesDied))
-		elseif not self.voiceSound:IsBeingPlayed() then
-			self.healthCriticalSound:FadeOut(400);
-			self.finalDeathLoop:FadeOut(400);
-			self.Health = -1;
-			self.Status = 4;
-			DiscoHarry.slowmoExit(self)
-			self.slowmoDuration = 0;
+		if not self.voiceSound:IsBeingPlayed() then
+			if not self.finalDeath then
+				self.deathSaveRoll = true;
+				DiscoHarry.diceRollQueue(self, 4 * math.max(1, self.timesDied))
+			else
+				if not self.soundsFaded == true then
+					self.soundsFaded = true;
+					DiscoHarry.slowmoExit(self)
+					self.slowmoDuration = 0;
+					self.healthCriticalSound:FadeOut(400);
+					self.finalDeathLoop:FadeOut(400);
+				end
+				self.Health = -1;
+				self.Status = 4;
+			end
 		end
 	end
 	
@@ -460,7 +468,85 @@ function Update(self)
 		end
 	end]]
 	
+	local origin = self.Pos + Vector(0, 50)
+	
+	if player then
+	
+		-- Text
+		if self.voiceSound:IsBeingPlayed() then
+			self.voiceSoundTranscriptionDuration = 1
+		end
+		if self.voiceSoundTranscriptionDuration > 0 then
+			self.voiceSoundTranscriptionDuration = math.max(self.voiceSoundTranscriptionDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+			
+			local originText = self.Pos + Vector(70 * -self.FlipFactor, 0)
+			
+			if self.voiceSoundTranscriptionIcon > 0 then
+				local skillBoxSize = Vector(25, 35)
+				PrimitiveMan:DrawBoxFillPrimitive(originText - skillBoxSize * 0.5, originText + skillBoxSize * 0.5, 245)
+				
+				local spawn = false
+				if self.iconDisplayTimer:IsPastSimMS(self.iconDisplayDuration) then
+					self.iconDisplayTimer:Reset()
+					spawn = true
+				end
+				
+				if self.iconDisplayUID then
+					local icon = MovableMan:FindObjectByUniqueID(self.iconDisplayUID)
+					if icon then
+						icon.Pos = originText
+					end
+				end
+				if spawn then
+					local glow = CreateMOPixel("Harry Skill Glow " .. tostring(self.voiceSoundTranscriptionIcon), "Disco.rte");
+					glow.Pos = originText;
+					MovableMan:AddParticle(glow);
+					
+					self.iconDisplayUID = glow.UniqueID
+				end
+			end
+			
+			local textSplit = DiscoHarryVO.Split(self.voiceSoundTranscription, " ")
+			local textLines = {}
+			local textLine = ""
+			for i, line in ipairs(textSplit) do
+				if string.sub(line, #line, #line) == "." then
+					textLine = textLine .. line
+					table.insert(textLines, textLine)
+					textLine = ""
+				else
+					textLine = textLine .. line .. " "
+				end
+			end
+			
+			local textMode = not self.HFlipped and 2 or 0
+			
+			local maxi = #textLines
+			for i, line in ipairs(textLines) do
+				local factor = (i - 1) * (maxi / (maxi - 1)) - maxi * 0.5
+				local offset = math.floor(factor * 4)
+				PrimitiveMan:DrawTextPrimitive(originText + Vector(30 * -self.FlipFactor, offset), line, true, textMode)
+			end
+		end
+		
+	end
+	
 	if self.Head then
+	
+		if self:NumberValueExists("Targeting VO") then
+			self:RemoveNumberValue("Targeting VO");
+			if math.random(0, 100) < 10 then
+				DiscoHarry.playVoice(self, "Gun Aim", 1);
+			end
+		end
+		
+		if self:NumberValueExists("Fired VO") then
+			self:RemoveNumberValue("Fired VO");
+			if math.random(0, 100) < 10 then
+				DiscoHarry.playVoice(self, "Gun Shoot", 1);
+			end
+		end	
+	
 		self.Head.Frame = math.floor((7 - math.min(self.blinkTimer.ElapsedSimTimeMS / 300, 1) * 3) + 0.55)
 		if self.controller:IsState(Controller.WEAPON_FIRE) or self.skillCheckQueued then-- or (self.Health > 99 or (self.Health > 47.313 and self.Health < 48.211)) then
 			self.Head.Frame = self.Head.Frame - 4
@@ -527,64 +613,6 @@ function Update(self)
 		
 		-- HUD
 		if player then
-			local origin = self.Pos + Vector(0, 50)
-			
-			-- Text
-			if self.voiceSound:IsBeingPlayed() then
-				self.voiceSoundTranscriptionDuration = 1
-			end
-			if self.voiceSoundTranscriptionDuration > 0 then
-				self.voiceSoundTranscriptionDuration = math.max(self.voiceSoundTranscriptionDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
-				
-				local originText = self.Pos + Vector(70 * -self.FlipFactor, 0)
-				
-				if self.voiceSoundTranscriptionIcon > 0 then
-					local skillBoxSize = Vector(25, 35)
-					PrimitiveMan:DrawBoxFillPrimitive(originText - skillBoxSize * 0.5, originText + skillBoxSize * 0.5, 245)
-					
-					local spawn = false
-					if self.iconDisplayTimer:IsPastSimMS(self.iconDisplayDuration) then
-						self.iconDisplayTimer:Reset()
-						spawn = true
-					end
-					
-					if self.iconDisplayUID then
-						local icon = MovableMan:FindObjectByUniqueID(self.iconDisplayUID)
-						if icon then
-							icon.Pos = originText
-						end
-					end
-					if spawn then
-						local glow = CreateMOPixel("Harry Skill Glow " .. tostring(self.voiceSoundTranscriptionIcon), "Disco.rte");
-						glow.Pos = originText;
-						MovableMan:AddParticle(glow);
-						
-						self.iconDisplayUID = glow.UniqueID
-					end
-				end
-				
-				local textSplit = DiscoHarryVO.Split(self.voiceSoundTranscription, " ")
-				local textLines = {}
-				local textLine = ""
-				for i, line in ipairs(textSplit) do
-					if string.sub(line, #line, #line) == "." then
-						textLine = textLine .. line
-						table.insert(textLines, textLine)
-						textLine = ""
-					else
-						textLine = textLine .. line .. " "
-					end
-				end
-				
-				local textMode = not self.HFlipped and 2 or 0
-				
-				local maxi = #textLines
-				for i, line in ipairs(textLines) do
-					local factor = (i - 1) * (maxi / (maxi - 1)) - maxi * 0.5
-					local offset = math.floor(factor * 3)
-					PrimitiveMan:DrawTextPrimitive(originText + Vector(30 * -self.FlipFactor, offset), line, true, textMode)
-				end
-			end
 			
 			-- Display skill check result
 			if self.skillCheckStartSound:IsBeingPlayed() then

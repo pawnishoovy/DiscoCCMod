@@ -26,6 +26,10 @@ function Create(self)
 	
 	self.targetingAwaitingSkillCheck = false
 	self.targetingSuccess = false
+	
+	self.VOTriggerTimer = Timer();
+	self.VOTriggerDelay = 5000;
+	
 end
 function Update(self)
 	
@@ -135,6 +139,11 @@ function Update(self)
 		end
 		
 		if self.targetingActor then
+			if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and self.targetingVOPlayed ~= true then
+				self.parent:SetNumberValue("Targeting VO", 1);
+				self.targetingVOPlayed = true;
+				self.VOTriggerTimer:Reset();
+			end
 			local actor = MovableMan:FindObjectByUniqueID(self.targetingActor)
 			if actor and IsActor(actor) then
 				actor = ToActor(actor)
@@ -236,6 +245,8 @@ function Update(self)
 					end
 				end
 			end
+		else
+			self.targetingVOPlayed = false;
 		end
 	else
 		self.targeting = false
@@ -320,6 +331,8 @@ function Update(self)
 		
 		self.accuracy = 0
 		
+		local VOPlayed = false;
+		
 		-- Kill
 		if self.targetingSuccess and self.targetingActor then
 			local actor = MovableMan:FindObjectByUniqueID(self.targetingActor)
@@ -331,6 +344,11 @@ function Update(self)
 				actor.AngularVel = actor.AngularVel + RangeRand(-1, 1) * 5
 				actor.Health = actor.Health - 50
 				if math.random() < 0.25 then
+					if self.parent and self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random() < 0.10 then
+						VOPlayed = true;
+						self.parent:SetNumberValue("Headshot VO", 1);
+						self.VOTriggerTimer:Reset();
+					end
 					if actor.Head then
 						if math.random() < 0.5 then
 							local head = actor.Head
@@ -356,6 +374,13 @@ function Update(self)
 					end
 				end
 				
+			end
+		end
+		
+		if VOPlayed == false then
+			if self.parent and self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) then
+				self.parent:SetNumberValue("Fired VO", 1);
+				self.VOTriggerTimer:Reset();
 			end
 		end
 		

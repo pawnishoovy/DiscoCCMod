@@ -25,7 +25,7 @@ DiscoHarryVO.skillIndexes["Suggestion"] = 12
 
 DiscoHarryVO.skillIndexes["Endurance"] = 13
 DiscoHarryVO.skillIndexes["Pain Threshold"] = 14
-DiscoHarryVO.skillIndexes["Empathy"] = 15
+DiscoHarryVO.skillIndexes["Physical Instrument"] = 15
 DiscoHarryVO.skillIndexes["Electrochemistry"] = 16
 DiscoHarryVO.skillIndexes["Shivers"] = 17
 DiscoHarryVO.skillIndexes["Half-light"] = 18
@@ -36,6 +36,9 @@ DiscoHarryVO.skillIndexes["Reaction Speed"] = 21
 DiscoHarryVO.skillIndexes["Savoir-Faire"] = 22
 DiscoHarryVO.skillIndexes["Interfacing"] = 23
 DiscoHarryVO.skillIndexes["Composure"] = 24
+
+DiscoHarryVO.skillIndexes["Ancient Reptilian Brain"] = 25
+DiscoHarryVO.skillIndexes["Limbic System"] = 26
 
 DiscoHarryVO.transcriptions = {}
 
@@ -60,21 +63,21 @@ DiscoHarryVO.transcriptions["Death"][17] = {"Pain Threshold", "Something inside 
 DiscoHarryVO.transcriptions["Death"][18] = {"Interfacing", "Warm blood pools underneath you. It's sticky, and there's so much of it..."}
 
 DiscoHarryVO.transcriptions["Gib Death"] = {};
-DiscoHarryVO.transcriptions["Gib Death"][1] = {"Ancient Reptillian Brain", "This is death. One more door, baby! One more door!"}
-DiscoHarryVO.transcriptions["Gib Death"][2] = {"Ancient Reptillian Brain", "There is nothing. Only warm primordial blackness. Your conscious ferments in it, no larger than a single grain of malt. You don't have to do anything anymore."}
-DiscoHarryVO.transcriptions["Gib Death"][3] = {"Ancient Reptillian Brain", "Alright, Nothing-Town to Fuck-All-Borough!"}
-DiscoHarryVO.transcriptions["Gib Death"][4] = {"Ancient Reptillian Brain", "I was wrong to let you go. I should've kept you here. Is it bright where you are? Is it *terrifying*? Have you felt *the love*?"}
-DiscoHarryVO.transcriptions["Gib Death"][5] = {"Ancient Reptillian Brain", "You are *way* cool. Cooler than the bottom of the sea. Too cool for this world..."}
-DiscoHarryVO.transcriptions["Gib Death"][6] = {"Ancient Reptillian Brain", "This respite... you've earned it, brother. Bask in the darkness. Let it swallow you up, and swivel you around, while you forget *everything* you've managed to remember."}
-DiscoHarryVO.transcriptions["Gib Death"][7] = {"Ancient Reptillian Brain", "There are no days here. There are no weeks. Just black tape spinning, on repeat, until the end."}
-DiscoHarryVO.transcriptions["Gib Death"][8] = {"Ancient Reptillian Brain", "Blackness, blackness, blackness! The ultimate disco! The ruins of your life behind you, still smoldering. Ashes rise, but you're not looking."}
+DiscoHarryVO.transcriptions["Gib Death"][1] = {"Ancient Reptilian Brain", "This is death. One more door, baby! One more door!"}
+DiscoHarryVO.transcriptions["Gib Death"][2] = {"Ancient Reptilian Brain", "There is nothing. Only warm primordial blackness. Your conscious ferments in it, no larger than a single grain of malt. You don't have to do anything anymore."}
+DiscoHarryVO.transcriptions["Gib Death"][3] = {"Ancient Reptilian Brain", "Alright, Nothingtown to Fuck-All-Borough!"}
+DiscoHarryVO.transcriptions["Gib Death"][4] = {"Ancient Reptilian Brain", "I was wrong to let you go. I should've kept you here. Is it bright where you are? Is it *terrifying*? Have you felt *the love*?"}
+DiscoHarryVO.transcriptions["Gib Death"][5] = {"Ancient Reptilian Brain", "You are *way* cool. Cooler than the bottom of the sea. Too cool for this world..."}
+DiscoHarryVO.transcriptions["Gib Death"][6] = {"Ancient Reptilian Brain", "This respite... you've earned it, brother. Bask in the darkness. Let it swallow you up, and swivel you around, while you forget *everything* you've managed to remember."}
+DiscoHarryVO.transcriptions["Gib Death"][7] = {"Ancient Reptilian Brain", "There are no days here. There are no weeks. Just black tape spinning, on repeat, until the end."}
+DiscoHarryVO.transcriptions["Gib Death"][8] = {"Ancient Reptilian Brain", "Blackness, blackness, blackness! The ultimate disco! The ruins of your life behind you, still smoldering. Ashes rise, but you're not looking."}
 DiscoHarryVO.transcriptions["Gib Death"][9] = {"Limbic System", "The fight? There is no fight. The fight is over. It was lost a thousand years ago. You have laid here forever. Keep falling... deeper... take the door."}
 DiscoHarryVO.transcriptions["Gib Death"][10] = {"Limbic System", "Kim? There is no Kim. There is no fight. It's over."}
 DiscoHarryVO.transcriptions["Gib Death"][11] = {"Limbic System", "You wouldn't like it if I told you what was back there. Why do you think you had to bludgeon yourDiscoHarryVO into oblivion? Or did you not sense yourDiscoHarryVO marinating? Poured so much on yourDiscoHarryVO, got a bit carried away, did we chef?"}
 DiscoHarryVO.transcriptions["Gib Death"][12] = {"Limbic System", "You lost."}
 
 DiscoHarryVO.transcriptions["Pain Light"] = {};
-DiscoHarryVO.transcriptions["Pain Light"][1] = {"Pain Threshold", "There it is again, like a swarm of hornets buzzing around your skull. A strange tingling you can almost smell."}
+DiscoHarryVO.transcriptions["Pain Light"][1] = {"Pain Threshold", "There it is again, like a swarm of hornets buzzing under your skull. A strange tingling you can almost smell."}
 DiscoHarryVO.transcriptions["Pain Light"][2] = {"Pain Threshold", "The pain, it is nothing. Revel in it. Absorb it. Gain power from it."}
 DiscoHarryVO.transcriptions["Pain Light"][3] = {"Pain Threshold", "Oh, whatever. This barely registers as damage."}
 DiscoHarryVO.transcriptions["Pain Light"][4] = {"Physical Instrument", "Even under the increased force on your skull, there is no pain. Just the sound of your own blood gushing in there, feeding your mind with oxygen."}
@@ -104,7 +107,7 @@ DiscoHarryVO.transcriptions["Pain Medium"][17] = {"Volition", "Keep it in now. D
 
 DiscoHarryVO.transcriptions["Pain Strong"] = {};
 DiscoHarryVO.transcriptions["Pain Strong"][1] = {"Volition", "Test your limits. Surpass them. Dance 'til you drop. Dance 'til you die, if you must."}
-DiscoHarryVO.transcriptions["Pain Strong"][2] = {"Pain Threshold", "I'm sorry, this didn't do anything. Usually hurting yourDiscoHarryVO does something for you."}
+DiscoHarryVO.transcriptions["Pain Strong"][2] = {"Pain Threshold", "I'm sorry, this didn't do anything. Usually hurting yourself does something for you."}
 DiscoHarryVO.transcriptions["Pain Strong"][3] = {"Pain Threshold", "It would make a million years of evolution, or a total reversal in the condition of the world, for your pain to end."}
 DiscoHarryVO.transcriptions["Pain Strong"][4] = {"Pain Threshold", "Feels like someone set a mustard field ablaze, right inside your nose, then drenched it in tear-gas. Your nose is a singular source of pain, but at the same time you don't remember the last time you felt so alive."}
 DiscoHarryVO.transcriptions["Pain Strong"][5] = {"Pain Threshold", "Almost snapped your neck, but I fucking got this. No pain. No pain."}
