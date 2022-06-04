@@ -9,9 +9,10 @@ function DiscoHarry.slowmoEnter(self)
 	
 	self.slowmoLoop:Play(self.Pos);
 	
-	local slowdown = 7
-	TimerMan.TimeScale = 1 / slowdown
-	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
+	-- local slowdown = 10
+	-- TimerMan.TimeScale = 1 / slowdown
+	-- TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
+	self.slowmoTransition = 0
 end
 
 function DiscoHarry.slowmoExit(self)
@@ -20,11 +21,12 @@ function DiscoHarry.slowmoExit(self)
 	end
 	self.slowmoExitSound:Play(self.Pos)
 	self.slowmoOn = false
+	--self.slowmoTransition = 1
 	
 	self.slowmoLoop:FadeOut(400);
 	
-	TimerMan.TimeScale = 1
-	TimerMan.DeltaTimeSecs = self.slowmoSimSpeed
+	--TimerMan.TimeScale = 1
+	--TimerMan.DeltaTimeSecs = self.slowmoSimSpeed
 	
 	--
 end
@@ -119,6 +121,17 @@ function DiscoHarry.diceRoll(self, threshold)
 	return result
 end
 
+function DiscoHarry.diceRollStopQueue(self)
+	self:RemoveNumberValue("DiceRollQueued")
+	self:RemoveNumberValue("DiceRollResult");
+	self:RemoveNumberValue("DiceRollThreshold")
+	
+	self.skillCheckStartSound:Stop()
+	
+	self.skillCheckThreshold = -1
+	self.skillCheckQueued = false
+end
+
 function DiscoHarry.playVoice(self, sound, priority)
 	if self.Health > 0 and priority > self.voiceSoundPriority or not self.voiceSound:IsBeingPlayed() then
 		print(sound)
@@ -134,11 +147,24 @@ function DiscoHarry.playVoice(self, sound, priority)
 		local text = data[2]
 		print(skill)
 		print(skillIndex)
-		print("index=")
-		print(index)
+		--print("index=")
+		--print(index)
 		self.voiceSoundTranscription = text
 		self.voiceSoundTranscriptionIcon = skillIndex
 		self.voiceSoundTranscriptionDuration = 1
+		self.voiceSoundTranscriptionAnimation = 0
+		
+		if skillIndex then
+			if skillIndex <= 6 then
+				self.skillSounds["INT"]:Play(self.Pos)
+			elseif skillIndex <= 12 then
+				self.skillSounds["PSY"]:Play(self.Pos)
+			elseif skillIndex <= 18 then
+				self.skillSounds["FYS"]:Play(self.Pos)
+			elseif skillIndex <= 24 then
+				self.skillSounds["MOT"]:Play(self.Pos)
+			end
+		end
 		
 		return true
 	end
@@ -156,6 +182,13 @@ function Create(self)
 	
 	self.skillChanceDisplayDuration = 0
 	self.skillChanceDisplayThreshold = 0
+	
+	self.skillSounds = {
+		["FYS"] = CreateSoundContainer("Harry Skill FYS", "Disco.rte"),
+		["INT"] = CreateSoundContainer("Harry Skill INT", "Disco.rte"),
+		["MOT"] = CreateSoundContainer("Harry Skill MOT", "Disco.rte"),
+		["PSY"] = CreateSoundContainer("Harry Skill PSY", "Disco.rte")
+	}
 	
 	self.skillCheckStartSound = CreateSoundContainer("Harry Skill Start", "Disco.rte")
 	self.skillCheckSuccessSound = CreateSoundContainer("Harry Skill Success", "Disco.rte")
@@ -191,6 +224,7 @@ function Create(self)
 		["Pain Medium"] = 17,
 		["Pain Strong"] = 16,
 		["Partial Miss"] = 1,
+		["Total Miss"] = 2,
 		["Recover"] = 12,
 		["Spot"] = 32
 	}
@@ -210,6 +244,7 @@ function Create(self)
 	self.voiceSoundTranscription = ""
 	self.voiceSoundTranscriptionIcon = -1
 	self.voiceSoundTranscriptionDuration = 1
+	self.voiceSoundTranscriptionAnimation = 0
 	
 	self.iconDisplayUID = nil
 	self.iconDisplayDuration = 16;
@@ -245,6 +280,12 @@ function Create(self)
 	
 	self.nodFactor = 0
 	
+	-- Dodge
+	self.dodgeRoll = false
+	self.dodgeDuration = 0
+	self.dodgeDurationMax = 4
+	self.dodgeDelay = 0
+	
 	-- leg Collision Detection system
 	self.foot = 0;
     self.feetContact = {false, false}
@@ -262,6 +303,7 @@ function Create(self)
 	self.slowmoSimSpeed = 1 / 60
 	self.slowmoOn = false
 	self.slowmoDuration = 0
+	self.slowmoTransition = 0
 	
 	self.spriteSkillChance = CreateMOSRotating("Harry Skill Chance", "Disco.rte")
 	self.spriteSkillSuccess = CreateMOSRotating("Harry Skill Success", "Disco.rte")
@@ -375,29 +417,32 @@ function Update(self)
 	end
 	
 	-- DEATH LOGIC
-	
-	if (not self.finalDeath) and self.Health < 1 and self.deathSequenceStarted ~= true then
-		self.healthDamageSound:Play(self.Pos);
-		self.healthCriticalSound:Play(self.Pos);
-		DiscoHarry.slowmoEnter(self)
-		self.slowmoDuration = 15000;
-		self.deathSequenceStarted = true
-		self.timesDied = self.timesDied + 1
-		if player then
-			self.voiceSound:Stop(-1);
-			if not self.Head then
-				self.finalDeath = true;
-				--self.voiceSound = self.voiceSounds.GibDeath
-				--self.voiceSound:Play(self.Pos);
-				DiscoHarry.playVoice(self, "Gib Death", 101)
-				
-				self.finalDeathLoop:Play(self.Pos);
-			else
-				--self.voiceSound = self.voiceSounds.Death
-				--self.voiceSound:Play(self.Pos);
-				DiscoHarry.playVoice(self, "Death", 100)
-			end
+	if player then
+		if (not self.finalDeath) and self.Health < 1 and self.deathSequenceStarted ~= true then
+			self.healthDamageSound:Play(self.Pos);
+			self.healthCriticalSound:Play(self.Pos);
+			DiscoHarry.slowmoEnter(self)
+			self.slowmoDuration = 15000;
+			self.deathSequenceStarted = true
+			self.timesDied = self.timesDied + 1
+			
+			DiscoHarry.diceRollStopQueue(self)
+			if player then
+				self.voiceSound:Stop(-1);
+				if not self.Head then
+					self.finalDeath = true;
+					--self.voiceSound = self.voiceSounds.GibDeath
+					--self.voiceSound:Play(self.Pos);
+					DiscoHarry.playVoice(self, "Gib Death", 101)
+					
+					self.finalDeathLoop:Play(self.Pos);
+				else
+					--self.voiceSound = self.voiceSounds.Death
+					--self.voiceSound:Play(self.Pos);
+					DiscoHarry.playVoice(self, "Death", 100)
+				end
 
+			end
 		end
 	end
 	
@@ -408,10 +453,12 @@ function Update(self)
 		if not player then
 			self.voiceSound:Stop(-1);
 		end
+		local threshold = 4 * math.max(1, self.timesDied)
 		if not self.voiceSound:IsBeingPlayed() then
 			if not self.finalDeath then
 				self.deathSaveRoll = true;
-				DiscoHarry.diceRollQueue(self, 4 * math.max(1, self.timesDied))
+				--DiscoHarry.diceRollStopQueue(self)
+				DiscoHarry.diceRollQueue(self, threshold)
 			else
 				if not self.soundsFaded == true then
 					self.soundsFaded = true;
@@ -423,33 +470,36 @@ function Update(self)
 				self.Health = -1;
 				self.Status = 4;
 			end
+		else
+			self:SetNumberValue("SkillChanceThreshold", threshold)
 		end
 	end
 	
 	-- HEALTH AND PAIN LOGIC
-	
+	--for limb in actor.Attachables do
 	if self.updateTimer:IsPastSimMS(500) or self.Health < self.oldHealth then
 		self.updateTimer:Reset();
 		self.aggressive = self.Health < self.MaxHealth * 0.5;
 		if self.Health < self.oldHealth then
 			self.regenInitialTimer:Reset();
 			self.Healing = false;
-			if player and math.random(0, 100) < 40 and self.Health > 0 then
+			if player and self.Health > 0 then
 				if not self.voiceSound:IsBeingPlayed() then
 					if self.oldHealth - self.Health > 40 then
 						self.healthDamageSound:Play(self.Pos);
-						--self.voiceSound = self.voiceSounds.PainStrong
-						--self.voiceSound:Play(self.Pos);
-						DiscoHarry.playVoice(self, "Pain Strong", 2)
+						if math.random(0, 100) < 80 then
+							DiscoHarry.playVoice(self, "Pain Strong", 2)
+						end
 					elseif self.oldHealth - self.Health > 15 then
 						self.healthDamageSound:Play(self.Pos);
-						--self.voiceSound = self.voiceSounds.PainMedium
-						--self.voiceSound:Play(self.Pos);
-						DiscoHarry.playVoice(self, "Pain Medium", 1)
+						if math.random(0, 100) < 50 then
+							DiscoHarry.playVoice(self, "Pain Medium", 1)
+						end
 					elseif  self.oldHealth - self.Health > 5 then
-						--self.voiceSound = self.voiceSounds.PainLight
-						--self.voiceSound:Play(self.Pos);
-						DiscoHarry.playVoice(self, "Pain Light", 1)
+						self.healthDamageSound:Play(self.Pos);
+						if math.random(0, 100) < 40 then
+							DiscoHarry.playVoice(self, "Pain Light", 1)
+						end
 					end
 				end
 			end
@@ -471,19 +521,54 @@ function Update(self)
 	local origin = self.Pos + Vector(0, 50)
 	
 	if player then
-	
+		
+		-- DODGE
+		if self.dodgeRoll then
+			self.slowmoDuration = math.max(self.slowmoDuration, 0.05)
+		end
+		if self.detectedParticleClose and self.detectedParticleCloseLasting > 0 then
+			
+			if self.dodgeDuration <= 0 and self.dodgeDelay <= 0 then
+				self.slowmoDuration = math.max(self.slowmoDuration, 0.3)
+				if self.dodgeDuration > 0 and detectedParticleClose and not not self.dodgeRoll then
+					self.dodgeDuration = math.min(self.dodgeDuration + 0.1, self.dodgeDurationMax)
+				end
+				
+				local thershold = 6
+				
+				if not self.dodgeRoll then
+					self:SetNumberValue("SkillChanceThreshold", thershold)
+				end
+				if self.controller:IsState(Controller.BODY_CROUCH) == true and not self.dodgeRoll and not self.skillCheckQueued and not self.skillCheckStartSound:IsBeingPlayed() then
+					DiscoHarry.diceRollQueue(self, thershold)
+					self.dodgeRoll = true
+					self.dodgeDuration = 0.4
+				end
+			end
+		else
+			self.dodgeDuration = math.max(self.dodgeDuration - TimerMan.DeltaTimeSecs, 0)
+		end
+		self.dodgeDelay = math.max(self.dodgeDelay - TimerMan.DeltaTimeSecs, 0)
+		
 		-- Text
 		if self.voiceSound:IsBeingPlayed() then
-			self.voiceSoundTranscriptionDuration = 1
+			self.voiceSoundTranscriptionDuration = 2
 		end
 		if self.voiceSoundTranscriptionDuration > 0 then
 			self.voiceSoundTranscriptionDuration = math.max(self.voiceSoundTranscriptionDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+			if self.voiceSoundTranscription then
+				self.voiceSoundTranscriptionAnimation = math.min(self.voiceSoundTranscriptionAnimation + TimerMan.DeltaTimeSecs / TimerMan.TimeScale / #self.voiceSoundTranscription * 15, 1)
+			end
 			
 			local originText = self.Pos + Vector(70 * -self.FlipFactor, 0)
 			
-			if self.voiceSoundTranscriptionIcon > 0 then
+			if self.voiceSoundTranscriptionIcon and self.voiceSoundTranscriptionIcon > 0 then
 				local skillBoxSize = Vector(25, 35)
 				PrimitiveMan:DrawBoxFillPrimitive(originText - skillBoxSize * 0.5, originText + skillBoxSize * 0.5, 245)
+				
+				if self.voiceSoundTranscriptionDuration > 2.9 then
+					PrimitiveMan:DrawBoxPrimitive(originText - skillBoxSize * 0.5, originText + skillBoxSize * 0.5, 254)
+				end
 				
 				local spawn = false
 				if self.iconDisplayTimer:IsPastSimMS(self.iconDisplayDuration) then
@@ -506,25 +591,44 @@ function Update(self)
 				end
 			end
 			
-			local textSplit = DiscoHarryVO.Split(self.voiceSoundTranscription, " ")
+			-- local textSplit = DiscoHarryVO.Split(self.voiceSoundTranscription, " ")
+			-- local textLines = {}
+			-- local textLine = ""
+			-- for i, line in ipairs(textSplit) do
+				-- if string.sub(line, #line, #line) == "." then
+					-- textLine = textLine .. line
+					-- table.insert(textLines, textLine)
+					-- textLine = ""
+				-- else
+					-- textLine = textLine .. line .. " "
+				-- end
+			-- end
+			local scriptFactor = self.voiceSoundTranscriptionAnimation * math.min(self.voiceSoundTranscriptionDuration, 1)
+			local script = string.sub(self.voiceSoundTranscription, 1, math.floor(#self.voiceSoundTranscription * scriptFactor + 0.5))
+			
+			local textSplit = DiscoHarryVO.Split(script, " ")
 			local textLines = {}
 			local textLine = ""
+			local textWords = 0
 			for i, line in ipairs(textSplit) do
-				if string.sub(line, #line, #line) == "." then
+				if textWords > 6 then
 					textLine = textLine .. line
 					table.insert(textLines, textLine)
 					textLine = ""
+					textWords = 0
 				else
 					textLine = textLine .. line .. " "
+					textWords = textWords + 1
 				end
 			end
+			table.insert(textLines, textLine)
 			
 			local textMode = not self.HFlipped and 2 or 0
 			
 			local maxi = #textLines
 			for i, line in ipairs(textLines) do
-				local factor = (i - 1) * (maxi / (maxi - 1)) - maxi * 0.5
-				local offset = math.floor(factor * 4)
+				local factor = i - maxi * 0.5
+				local offset = math.floor(factor * 8)
 				PrimitiveMan:DrawTextPrimitive(originText + Vector(30 * -self.FlipFactor, offset), line, true, textMode)
 			end
 		end
@@ -532,21 +636,34 @@ function Update(self)
 	end
 	
 	if self.Head then
-	
 		if self:NumberValueExists("Targeting VO") then
 			self:RemoveNumberValue("Targeting VO");
-			if math.random(0, 100) < 10 then
+			if math.random(0, 100) < 80 then
 				DiscoHarry.playVoice(self, "Gun Aim", 1);
 			end
 		end
 		
 		if self:NumberValueExists("Fired VO") then
 			self:RemoveNumberValue("Fired VO");
-			if math.random(0, 100) < 10 then
-				DiscoHarry.playVoice(self, "Gun Shoot", 1);
-			end
+			DiscoHarry.playVoice(self, "Gun Shoot", 1);
 		end	
-	
+		
+		if self:NumberValueExists("Fired Headshot VO") then
+			self:RemoveNumberValue("Fired Headshot VO");
+			DiscoHarry.playVoice(self, "Headshot Hit", 1);
+		end	
+		
+		if self:NumberValueExists("Fired Hit VO") then
+			self:RemoveNumberValue("Fired Hit VO");
+			DiscoHarry.playVoice(self, "Hit", 1);
+		end	
+		
+		if self:NumberValueExists("Fired Missed VO") then
+			self:RemoveNumberValue("Fired Missed VO");
+			DiscoHarry.playVoice(self, "Total Miss", 1);
+		end	
+		
+		
 		self.Head.Frame = math.floor((7 - math.min(self.blinkTimer.ElapsedSimTimeMS / 300, 1) * 3) + 0.55)
 		if self.controller:IsState(Controller.WEAPON_FIRE) or self.skillCheckQueued then-- or (self.Health > 99 or (self.Health > 47.313 and self.Health < 48.211)) then
 			self.Head.Frame = self.Head.Frame - 4
@@ -598,7 +715,19 @@ function Update(self)
 			end
 			self:RemoveNumberValue("DiceRollResult");
 		end
-				
+
+		if self.dodgeRoll and self:NumberValueExists("DiceRollResult") then
+			self.dodgeRoll = false
+			DiscoHarry.slowmoExit(self)
+			
+			if self:GetNumberValue("DiceRollResult") == 2 then
+				self.dodgeDuration = self.dodgeDurationMax
+			end
+			self.dodgeDelay = 7
+			self:RemoveNumberValue("DiceRollResult");
+			self:RemoveNumberValue("DiceRollThreshold")
+		end
+		
 		--
 		if self:NumberValueExists("SkillChanceThreshold") then
 			self.skillChanceDisplayThreshold = self:GetNumberValue("SkillChanceThreshold")
@@ -613,6 +742,17 @@ function Update(self)
 		
 		-- HUD
 		if player then
+			
+			-- Dodge duration bar
+			if self.dodgeDuration > 0 then
+				local factor = self.dodgeDuration / self.dodgeDurationMax
+				factor = math.sqrt(factor)
+				
+				local offset = Vector(0, -30)
+				local line = Vector(15, 0) * factor
+				PrimitiveMan:DrawLinePrimitive(origin + offset - line, origin + offset + line, 254)
+				PrimitiveMan:DrawLinePrimitive(origin + offset - line + Vector(0, 1), origin + offset + line + Vector(0, 1), 254)
+			end
 			
 			-- Display skill check result
 			if self.skillCheckStartSound:IsBeingPlayed() then
@@ -814,11 +954,29 @@ function Update(self)
 		self:SetNumberValue("SlowmoDuration", 0)
 	end
 	
-	if self.slowmoDuration > 0 then
+	local slowmoStrength = 30
+	
+	if self.slowmoDuration > 0 and player then
 		DiscoHarry.slowmoEnter(self)
 		self.slowmoDuration = math.max(self.slowmoDuration - TimerMan.DeltaTimeSecs / TimerMan.TimeScale, 0)
+		
+		if self.slowmoTransition < 1 then
+			local slowdown = 1 + (slowmoStrength - 1) * self.slowmoTransition
+			TimerMan.TimeScale = 1 / slowdown
+			TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
+		end
+		self.slowmoTransition = math.min(self.slowmoTransition + TimerMan.DeltaTimeSecs / TimerMan.TimeScale * 3, 1)
 	else
 		DiscoHarry.slowmoExit(self)
+		if self.slowmoTransition > 0 then
+			local slowdown = 1 + (slowmoStrength - 1) * self.slowmoTransition
+			TimerMan.TimeScale = 1 / slowdown
+			TimerMan.DeltaTimeSecs = self.slowmoSimSpeed / slowdown
+		elseif TimerMan.TimeScale < 1 then
+			TimerMan.TimeScale = 1
+			TimerMan.DeltaTimeSecs = self.slowmoSimSpeed
+		end
+		self.slowmoTransition = math.max(self.slowmoTransition - TimerMan.DeltaTimeSecs / TimerMan.TimeScale * 3, 0)
 	end
 	
 	-- SPOTTING TARGET LOGIC!!

@@ -195,9 +195,9 @@ DiscoHarryVO.transcriptions["Gun Shoot"][3] = {"Perception", "You hear an explos
 DiscoHarryVO.transcriptions["Gun Shoot"][4] = {"Interfacing", "A plume of smoke erupts from the barrel. Your hand goes numb from the explosion. With your ears still ringing, you lower the weapon to see what happened."}
 DiscoHarryVO.transcriptions["Gun Shoot"][5] = {"Interfacing", "The cold piece of gun metal is surprisingly light. Your fingers fit right through the guard, instinctively resting on the trigger."}
 
-DiscoHarryVO.transcriptions["Head Hit"] = {};
-DiscoHarryVO.transcriptions["Head Hit"][1] = {"Hand/Eye Coordination", "This time feels different. You aim higher, as if pulled by a magnet. Your hand goes numb from the explosion, and a plume of smoke erupts from the gun."}
-DiscoHarryVO.transcriptions["Head Hit"][2] = {"Hand/Eye Coordination", "You know, you don't feel like too bad a of shot yourDiscoHarryVO..."}	
+DiscoHarryVO.transcriptions["Headshot Hit"] = {};
+DiscoHarryVO.transcriptions["Headshot Hit"][1] = {"Hand/Eye Coordination", "This time feels different. You aim higher, as if pulled by a magnet. Your hand goes numb from the explosion, and a plume of smoke erupts from the gun."}
+DiscoHarryVO.transcriptions["Headshot Hit"][2] = {"Hand/Eye Coordination", "You know, you don't feel like too bad a of shot yourself..."}	
 
 DiscoHarryVO.transcriptions["Hit"] = {};
 DiscoHarryVO.transcriptions["Hit"][1] = {"Authority", "With your hand numb from the recoil, you look at the body slumped down. For a moment, the man appears to *kneel* in front of you."}	

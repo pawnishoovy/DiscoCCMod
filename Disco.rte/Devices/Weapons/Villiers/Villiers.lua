@@ -51,9 +51,13 @@ function Update(self)
 	
 	--self.Reloadable = false
 	
-	if self.recoil > 0 then
+	if self:NumberValueExists("DiceRollQueued") or self.recoil > 0 then
 		self:Deactivate()
 	end
+	
+	-- if not self:NumberValueExists("DiceRollQueued") then
+		-- self.targetingAwaitingSkillCheck = false
+	-- end
 	
 	-- TARGETING!!!
 	if self.parent then
@@ -91,7 +95,9 @@ function Update(self)
 						local parent = mo:GetRootParent()
 						if parent and IsActor(parent) then
 							local actor = ToActor(parent)
-							table.insert(targets, {actor, factor})
+							if actor.Status < 2 then
+								table.insert(targets, {actor, factor})
+							end
 						end
 						
 					end
@@ -139,8 +145,10 @@ function Update(self)
 		end
 		
 		if self.targetingActor then
-			if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and self.targetingVOPlayed ~= true then
-				self.parent:SetNumberValue("Targeting VO", 1);
+			if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and self.targetingVOPlayed == false then
+				if math.random() < 0.2 then
+					self.parent:SetNumberValue("Targeting VO", 1);
+				end
 				self.targetingVOPlayed = true;
 				self.VOTriggerTimer:Reset();
 			end
@@ -255,25 +263,27 @@ function Update(self)
 	end
 	
 	-- Targeting
-	if self.parent and self.targetingAwaitingSkillCheck then
-		self.parent:SetNumberValue("SlowmoDuration", 0.1)
-		if self.parent:NumberValueExists("DiceRollResult") then
-			local result = self.parent:GetNumberValue("DiceRollResult")
-			if result == 2 then
-				self:Activate()
-				self.parent:SetNumberValue("DiceRollResult", 0)
-				self.targetingAwaitingSkillCheck = false
-				self.targetingSuccess = true
-			elseif result == 1 then
-				self:Activate()
-				self.parent:SetNumberValue("DiceRollResult", 0)
-				self.targetingAwaitingSkillCheck = false
-				self.targetingSuccess = false
+	if self.parent then
+		if self.targetingAwaitingSkillCheck then
+			self.parent:SetNumberValue("SlowmoDuration", 0.1)
+			if self.parent:NumberValueExists("DiceRollResult") then
+				local result = self.parent:GetNumberValue("DiceRollResult")
+				if result == 2 then
+					self:Activate()
+					self.parent:RemoveNumberValue("DiceRollResult")
+					self.targetingAwaitingSkillCheck = false
+					self.targetingSuccess = true
+				elseif result == 1 then
+					self:Activate()
+					self.parent:RemoveNumberValue("DiceRollResult")
+					self.targetingAwaitingSkillCheck = false
+					self.targetingSuccess = false
+				else
+					self:Deactivate()
+				end
 			else
 				self:Deactivate()
 			end
-		else
-			self:Deactivate()
 		end
 	end
 	
@@ -334,7 +344,7 @@ function Update(self)
 		local VOPlayed = false;
 		
 		-- Kill
-		if self.targetingSuccess and self.targetingActor then
+		if self.parent and self.targetingSuccess then
 			local actor = MovableMan:FindObjectByUniqueID(self.targetingActor)
 			if actor and IsAHuman(actor) then
 				actor = ToAHuman(actor)
@@ -344,11 +354,13 @@ function Update(self)
 				actor.AngularVel = actor.AngularVel + RangeRand(-1, 1) * 5
 				actor.Health = actor.Health - 50
 				if math.random() < 0.25 then
-					if self.parent and self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random() < 0.10 then
+					--if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random(0, 100) < 90 then
+					if math.random(0, 100) < 75 then
 						VOPlayed = true;
-						self.parent:SetNumberValue("Headshot VO", 1);
+						self.parent:SetNumberValue("Fired Headshot VO", 1);
 						self.VOTriggerTimer:Reset();
 					end
+					--end
 					if actor.Head then
 						if math.random() < 0.5 then
 							local head = actor.Head
@@ -372,13 +384,26 @@ function Update(self)
 							break
 						end
 					end
+					
+					--if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random(0, 100) < 45 then
+					if math.random(0, 100) < 45 then
+						VOPlayed = true;
+						self.parent:SetNumberValue("Fired Hit VO", 1);
+						self.VOTriggerTimer:Reset();
+					end
 				end
 				
+			end
+		elseif self.parent and self.targetingActor then
+			if self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random(0, 100) < 5 then
+				VOPlayed = true;
+				self.parent:SetNumberValue("Fired Missed VO", 1);
+				self.VOTriggerTimer:Reset();
 			end
 		end
 		
 		if VOPlayed == false then
-			if self.parent and self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) then
+			if self.parent and self.VOTriggerTimer:IsPastSimMS(self.VOTriggerDelay) and math.random(0, 100) < 5 then
 				self.parent:SetNumberValue("Fired VO", 1);
 				self.VOTriggerTimer:Reset();
 			end
@@ -435,14 +460,16 @@ function Update(self)
 	
 	-- Animation
 	if self.parent then
-		self.recoil = math.max(self.recoil - 1 * TimerMan.DeltaTimeSecs, 0)
+		self.recoil = math.max(self.recoil - 0.8 * TimerMan.DeltaTimeSecs, 0)
 		self.accuracy = math.min(self.accuracy + 0.35 * TimerMan.DeltaTimeSecs, 1)
 		if not self.targetingAwaitingSkillCheck and not self.preFireActive then
 			self.accuracySway = self.accuracySway + 1.5 * TimerMan.DeltaTimeSecs / TimerMan.TimeScale
 		end
 		
 		-- Recoil
-		self.rotationTarget = self.rotationTarget + (self.recoil * self.recoil) * 20
+		self.rotationTarget = self.rotationTarget + (self.recoil * self.recoil + math.sin(self.recoil * math.pi) * 0.5) * 20
+		
+		self.rotationTarget = self.rotationTarget + (1 - self.accuracy) * (math.sin(self.accuracySway * 2.0) + math.sin(self.accuracySway * 1.5 + 1) * 1.1 - math.cos(self.accuracySway * 4.15 - 0.5) * 0.6 + math.sin(self.accuracySway - 2.51) * 1.3) * 3
 		
 		-- Final rotation
 		self.rotation = (self.rotation + self.rotationTarget * TimerMan.DeltaTimeSecs * self.rotationSpeed) / (1 + TimerMan.DeltaTimeSecs * self.rotationSpeed)
